@@ -1,0 +1,23 @@
+---
+
+#- fail: msg="This role is only compatible with Ubuntu"
+#  when: ansible_distribution != 'Ubuntu'
+
+#- name: Include version-specific variables for Ubuntu.
+#  include_vars: "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
+#  when: ansible_distribution == 'Ubuntu'
+
+- include: debian.yml
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- include: redhat.yml
+  when: ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: enable service falco
+  service: name=falco enabled=yes state=started
+
+- name: configure falco
+  template: src=falco.yaml.j2 dest=/etc/falco.yaml mode=0644
+- name: configure falco rules
+  template: src=falco_rules.yaml.j2 dest=/etc/falco_rules.yaml mode=0644
+

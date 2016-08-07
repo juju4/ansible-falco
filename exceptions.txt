@@ -1,0 +1,18 @@
+falco: Unexpected setuid call by non-sudo, non-root program (user=messagebus command=dbus-daemon-lau org.freedesktop.systemd1 uid=root)
+falco: File below /etc opened for writing (user=root command=vim /etc/profile file=/etc/.profile.swp)
+falco[5404]: Shell spawned by untrusted binary (user=logcheck shell=bash parent=sh cmdline=bash /usr/sbin/logcheck)
+
+## system upgrade: recommend to stop falco for the maintenance window?
+
+## ansible usage
+falco: File below known binary directory renamed/removed (user=root command=python /tmp/user/0/ansible_OPkTca/ansible_module_file.py operation=rename file=
+falco: File below /etc opened for writing (user=root command=python /tmp/user/0/ansible_n83X_7/ansible_module_sysctl.py file=/etc/.ansible_m_sysctl_3O62zQ.conf)
+
+## compilation (this one was invoked by a 'sudo gem2.0 install ...')
+ Shell spawned by untrusted binary (user=root shell=bash parent=make cmdline=bash -c /bin/bash ./libtool --tag=CC   --mode=link gcc -g  -Wall -fexceptions -version-info `grep -v '^#' /var/lib/gems/2.0.0/gems/ffi-1.9.14/ext/ffi_c/libffi/libtool-version`    -o libffi.la -rpath /usr/local/lib src/debug.lo src/prep_cif.lo src/types.lo src/raw_api.lo src/java_raw_api.lo src/closures.lo                      src/x86/ffi64.lo src/x86/unix64.lo src/x86/ffi.lo src/x86/sysv.lo      )
+
+systemd[1]: Reloading.
+falco[5404]: File below /etc opened for writing (user=root command=insserv  file=/etc/init.d/.depend.boot)
+falco[5404]: File below /etc opened for writing (user=root command=insserv  file=/etc/init.d/.depend.start)
+falco[5404]: File below /etc opened for writing (user=root command=insserv  file=/etc/init.d/.depend.stop)
+

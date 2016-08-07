@@ -1,0 +1,12 @@
+---
+
+falco_json_output: false
+falco_log_stderr: true
+falco_log_stdout: true
+falco_syslog_output: true
+falco_file_output: false
+falco_file_output_path: './events.txt'
+falco_stdout_output: false
+falco_program_output: false
+falco_program_output_email: 'someone@example.com'
+

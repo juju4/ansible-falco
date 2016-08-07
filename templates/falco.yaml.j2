@@ -1,0 +1,31 @@
+# File containing Falco rules, loaded at startup.
+rules_file: /etc/falco_rules.yaml
+
+# Whether to output events in json or text
+json_output: {{ falco_json_output }}
+
+# Send information logs to stderr and/or syslog Note these are *not* security
+# notification logs! These are just Falco lifecycle (and possibly error) logs.
+log_stderr: {{ falco_log_stderr }}
+log_syslog: {{ falco_log_stdout }}
+
+
+# Where security notifications should go.
+# Multiple outputs can be enabled.
+
+syslog_output:
+  enabled: {{ falco_syslog_output }}
+
+file_output:
+  enabled: {{ falco_file_output }}
+  filename: {{ falco_file_output_path }}
+
+stdout_output:
+  enabled: {{ falco_stdout_output }}
+
+{% if falco_program_output is defined and falco_program_output %}
+program_output:
+  enabled: true
+  program: mail -s "Falco Notification" someone@example.com
+{% endif %}
+
