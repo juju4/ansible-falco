@@ -49,6 +49,8 @@ $ vagrant ssh
 
 ## Troubleshooting & Known issues
 
+* Not possible to run it inside containers
+https://github.com/draios/sysdig/issues/152
 
 ## License
 

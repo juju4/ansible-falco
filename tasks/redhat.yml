@@ -5,15 +5,15 @@
 - name: yum | install draios repository
   get_url: url=http://download.draios.com/stable/rpm/draios.repo dest=/etc/yum.repos.d/draios.repo mode=0644
 
-- name: yum | epel-release
+- name: yum | kernel-devel install
   yum: name={{item}} state=present update_cache=yes
   with_items:
-    - epel-release
+    - kernel-devel-{{ ansible_kernel }}
+  ignore_errors: true
 
 - name: yum | falco install
   yum: name={{item}} state=present update_cache=yes
   with_items:
     - dkms
-    - kernel-devel
     - falco
 

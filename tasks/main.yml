@@ -1,8 +1,5 @@
 ---
 
-#- fail: msg="This role is only compatible with Ubuntu"
-#  when: ansible_distribution != 'Ubuntu'
-
 #- name: Include version-specific variables for Ubuntu.
 #  include_vars: "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
 #  when: ansible_distribution == 'Ubuntu'
@@ -13,11 +10,20 @@
 - include: redhat.yml
   when: ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
-- name: enable service falco
-  service: name=falco enabled=yes state=started
-
 - name: configure falco
   template: src=falco.yaml.j2 dest=/etc/falco.yaml mode=0644
+  notify:
+    - restart falco
 - name: configure falco rules
-  template: src=falco_rules.yaml.j2 dest=/etc/falco_rules.yaml mode=0644
+#  template: src=falco_rules.yaml.j2 dest=/etc/falco_rules.yaml mode=0644
+  template: src=falco_rules_w_exceptions.yaml.j2 dest=/etc/falco_rules.yaml mode=0644
+  notify:
+    - restart falco
+
+- debug: var=ansible_virtualization_type
+- name: enable service falco
+  service: name=falco enabled=yes state=started
+  when: not (ansible_virtualization_type is defined and (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "kvm"))
+## note: for containers, it will not be possible to match kernel headers/devel which means module compilation fails. only observed on centos7
+
 

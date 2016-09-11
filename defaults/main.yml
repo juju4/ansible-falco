@@ -10,3 +10,7 @@ falco_stdout_output: false
 falco_program_output: false
 falco_program_output_email: 'someone@example.com'
 
+## else some macro can be very verbose (ex: on LXD or lxd+kitchen)
+falco_dontwatch_containers: true
+falco_containers_lxckitchen: false
+

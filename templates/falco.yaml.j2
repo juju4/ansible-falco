@@ -26,6 +26,6 @@ stdout_output:
 {% if falco_program_output is defined and falco_program_output %}
 program_output:
   enabled: true
-  program: mail -s "Falco Notification" someone@example.com
+  program: mail -s "Falco Notification" {{ falco_program_output_email }}
 {% endif %}
 
