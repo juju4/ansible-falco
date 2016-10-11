@@ -201,8 +201,10 @@
 - rule: write_etc
   desc: an attempt to write to any file below /etc, not in a pipe installer session
 {% if falco_dontwatch_containers %}
+#  condition: not container and evt.dir = < and open_write and not shadowutils_binaries and not sysdigcloud_binaries_parent and not package_mgmt_binaries and etc_dir and not proc.sname=fbash and proc.name != kitchen and not file in ('/var/spool/postfix/etc/resolv.conf', '/var/spool/postfix/etc/hosts', '/var/spool/postfix/etc/host.conf', '/var/spool/postfix/etc/nsswitch.conf', '/var/spool/postfix/etc/ssl/certs/ca-certificates.crt', '/etc/ld.so.cache~')
   condition: not container and evt.dir = < and open_write and not shadowutils_binaries and not sysdigcloud_binaries_parent and not package_mgmt_binaries and etc_dir and not proc.sname=fbash and proc.name != kitchen
 {% else %}
+#  condition: evt.dir = < and open_write and not shadowutils_binaries and not sysdigcloud_binaries_parent and not package_mgmt_binaries and etc_dir and not proc.sname=fbash and proc.name != kitchen and not file in ('/var/spool/postfix/etc/resolv.conf', '/var/spool/postfix/etc/hosts', '/var/spool/postfix/etc/host.conf', '/var/spool/postfix/etc/nsswitch.conf')
   condition: evt.dir = < and open_write and not shadowutils_binaries and not sysdigcloud_binaries_parent and not package_mgmt_binaries and etc_dir and not proc.sname=fbash and proc.name != kitchen
 {% endif %}
 #  output: "File below /etc opened for writing (user=%user.name command=%proc.cmdline file=%fd.name)"
@@ -219,9 +221,9 @@
 - rule: read_sensitive_file_untrusted
   desc: an attempt to read any sensitive file (e.g. files containing user/password/authentication information). Exceptions are made for known trusted programs.
 {% if falco_dontwatch_containers %}
-  condition: not container and open_read and not user_mgmt_binaries and not userexec_binaries and not proc.name in (iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, bash, sshd, systemd, aide, lxd, dpkg, dpkg-preconfigure, frontend) and not cron and sensitive_files
+  condition: not container and open_read and not user_mgmt_binaries and not userexec_binaries and not proc.name in (iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, bash, sshd, systemd, aide, lxd, dpkg, dpkg-preconfigure, dpkg-preconfigu, frontend, man-db.postinst, passwd) and not cron and sensitive_files
 {% else %}
-  condition: open_read and not user_mgmt_binaries and not userexec_binaries and not proc.name in (iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, bash, sshd, systemd, aide, lxd, dpkg, dpkg-preconfigure, frontend) and not cron and sensitive_files
+  condition: open_read and not user_mgmt_binaries and not userexec_binaries and not proc.name in (iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, bash, sshd, systemd, aide, lxd, dpkg, dpkg-preconfigure, frontend, man-db.postinst, passwd) and not cron and sensitive_files
 {% endif %}
   output: "Sensitive file opened for reading by non-trusted program (user=%user.name parent=%proc.pname command=%proc.cmdline file=%fd.name)"
   priority: WARNING
@@ -294,7 +296,7 @@
 
 - rule: run_shell_untrusted
   desc: an attempt to spawn a shell by a non-shell program. Exceptions are made for trusted binaries.
-  condition: not container and proc.name = bash and spawned_process and proc.pname exists and not parent_cron and not proc.pname in (bash, sshd, sudo, docker, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, logcheck) and proc.cmdline != 'bash /usr/sbin/logcheck'
+  condition: not container and proc.name = bash and spawned_process and proc.pname exists and not parent_cron and not proc.pname in (bash, sshd, sudo, docker, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, logcheck, update-aide.conf, update-aide.con) and not proc.cmdline = 'bash /usr/sbin/logcheck'
   output: "Shell spawned by untrusted binary (user=%user.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline)"
   priority: WARNING
 
@@ -305,7 +307,11 @@
 
 - rule: system_user_interactive
   desc: an attempt to run interactive commands by a system (i.e. non-login) user
+{% if falco_dontwatch_containers %}
+  condition: not container and spawned_process and system_users and interactive
+{% else %}
   condition: spawned_process and system_users and interactive
+{% endif %}
   output: "System user ran an interactive command (user=%user.name command=%proc.cmdline)"
   priority: WARNING
 
@@ -314,7 +320,7 @@
 - rule: run_shell_in_container
   desc: a shell was spawned by a non-shell program in a container. Container entrypoints are excluded.
 {% if falco_containers_lxckitchen is defined and falco_containers_lxckitchen %}
-  condition: container and proc.name = bash and spawned_process and proc.pname exists and not proc.pname in (bash, docker, sshd, python, sudo, busser)
+  condition: container and proc.name = bash and spawned_process and proc.pname exists and not proc.pname in (bash, docker, sshd, python, sudo, busser, sh)
 {% else %}
   condition: container and proc.name = bash and spawned_process and proc.pname exists and not proc.pname in (bash, docker)
 {% endif %}
@@ -340,8 +346,12 @@
 # sshd, sendmail-msp, sendmail attempt to setuid to root even when running as non-root. Excluding here to avoid meaningless FPs
 - rule: non_sudo_setuid
   desc: an attempt to change users by calling setuid. sudo/su are excluded. user "root" is also excluded, as setuid calls typically involve dropping privileges.
+{% if falco_dontwatch_containers %}
+  condition: not container and evt.type=setuid and evt.dir=> and not user.name=root and not userexec_binaries and not proc.name in (sshd, sendmail-msp, sendmail, postfix, smtp, apt-get) and not (user.name=messagebus and proc.name=dbus-daemon-launch-helper) and not (user.name=proxy and proc.name in (squid, pinger)) and not (user.name=nobody and proc.name=lxd)
+{% else %}
 #  condition: evt.type=setuid and evt.dir=> and not user.name=root and not userexec_binaries and not proc.name in (sshd, sendmail-msp, sendmail)
   condition: evt.type=setuid and evt.dir=> and not user.name=root and not userexec_binaries and not proc.name in (sshd, sendmail-msp, sendmail, postfix, smtp, apt-get) and not (user.name=messagebus and proc.name=dbus-daemon-launch-helper) and not (user.name=proxy and proc.name in (squid, pinger)) and not (user.name=nobody and proc.name=lxd)
+{% endif %}
   output: "Unexpected setuid call by non-sudo, non-root program (user=%user.name parent=%proc.pname command=%proc.cmdline uid=%evt.arg.uid)"
   priority: WARNING
 

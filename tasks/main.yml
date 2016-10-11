@@ -11,12 +11,13 @@
   when: ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 - name: configure falco
-  template: src=falco.yaml.j2 dest=/etc/falco.yaml mode=0644
+  template: src=falco.yaml.j2 dest=/etc/falco.yaml mode=0644 backup=yes validate='falco -c %s'
   notify:
     - restart falco
 - name: configure falco rules
 #  template: src=falco_rules.yaml.j2 dest=/etc/falco_rules.yaml mode=0644
-  template: src=falco_rules_w_exceptions.yaml.j2 dest=/etc/falco_rules.yaml mode=0644
+#  template: src=falco_rules_w_exceptions.yaml.j2 dest=/etc/falco_rules.yaml mode=0644 backup=yes validate='falco -l %s'
+  template: src=falco_rules_w_exceptions.yaml.j2 dest=/etc/falco_rules.yaml mode=0644 backup=yes
   notify:
     - restart falco
 
