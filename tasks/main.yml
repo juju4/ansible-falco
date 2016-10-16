@@ -11,7 +11,7 @@
   when: ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 - name: configure falco
-  template: src=falco.yaml.j2 dest=/etc/falco.yaml mode=0644 backup=yes validate='falco -c %s'
+  template: src=falco.yaml.j2 dest=/etc/falco.yaml mode=0644 backup=yes validate='falco -c %s -L'
   notify:
     - restart falco
 - name: configure falco rules
