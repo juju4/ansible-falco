@@ -136,7 +136,7 @@
   condition: proc.name in (coreutils_binaries, user_mgmt_binaries)
 
 - list: mail_binaries
-  items: [sendmail, sendmail-msp, postfix, pickup, procmail, exim4]
+  items: [sendmail, sendmail-msp, postfix, showq, pickup, procmail, exim4]
 
 - macro: sensitive_files
   condition: fd.name startswith /etc and (fd.name in (/etc/shadow, /etc/sudoers, /etc/pam.conf) or fd.directory in (/etc/sudoers.d, /etc/pam.d))
@@ -228,7 +228,7 @@
 - rule: Read sensitive file untrusted
   desc: an attempt to read any sensitive file (e.g. files containing user/password/authentication information). Exceptions are made for known trusted programs.
 #  condition: not container and open_read and not user_mgmt_binaries and not userexec_binaries and not proc.name in (iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, bash, sshd, systemd, aide, lxd, dpkg, dpkg-preconfigure, dpkg-preconfigu, frontend, man-db.postinst, passwd) and not cron and sensitive_files
-  condition: consider_containers and sensitive_files and open_read and not proc.name in (user_mgmt_binaries, userexec_binaries, package_mgmt_binaries, cron_binaries, iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, shell_binaries, sshd) and not proc.cmdline contains /usr/bin/mandb and not proc.cmdline contains "cmp -s shadow.bak /etc/shadow"
+  condition: consider_containers and sensitive_files and open_read and not proc.name in (user_mgmt_binaries, userexec_binaries, package_mgmt_binaries, cron_binaries, iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, shell_binaries, sshd, aide, systemd) and not proc.cmdline contains /usr/bin/mandb and not proc.cmdline contains "cmp -s shadow.bak /etc/shadow"
   output: "Sensitive file opened for reading by non-trusted program (user=%user.name name=%proc.name command=%proc.cmdline file=%fd.name)"
   priority: WARNING
 
@@ -285,7 +285,13 @@
 ## Warning Shell spawned by untrusted binary (user=nagios shell=sh parent=nrpe cmdline=sh -c /usr/lib/nagios/plugins/check_swap -w 30% -c 10%)
 - rule: Run shell untrusted
   desc: an attempt to spawn a shell by a non-shell program. Exceptions are made for trusted binaries.
-  condition: consider_containers and spawned_process and not container and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, falco, logcheck, update-aide.conf, update-aide.con, nrpe, check_updates.p)
+{% if 'mhnserver' in group_names %}
+  condition: consider_containers and spawned_process and not container and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, man-db, falco, logrotate, logcheck, syslog-summary, aide, update-aide.conf, update-aide.con, nrpe, check_updates.p, icinga2, npcd, apt-get, celery, python, uwsgi, fail2ban-server)
+{% elif falco_containers_lxckitchen is defined and falco_containers_lxckitchen %}
+  condition: consider_containers and spawned_process and not container and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, man-db, falco, logrotate, logcheck, syslog-summary, aide, update-aide.conf, update-aide.con, nrpe, check_updates.p, icinga2, npcd, apt-get, fail2ban-server, lxd, kitchen, command.rb)
+{% else %}
+  condition: consider_containers and spawned_process and not container and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, man-db, falco, logrotate, logcheck, syslog-summary, aide, update-aide.conf, update-aide.con, nrpe, check_updates.p, icinga2, npcd, apt-get, fail2ban-server)
+{% endif %}
   output: "Shell spawned by untrusted binary (user=%user.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline)"
   priority: WARNING
 
@@ -324,9 +330,9 @@
 - rule: Run shell in container
   desc: a shell was spawned by a non-shell program in a container. Container entrypoints are excluded.
 {% if falco_containers_lxckitchen is defined and falco_containers_lxckitchen %}
-  condition: spawned_process and container and shell_procs and proc.pname exists and not proc.pname in (shell_binaries, docker_binaries, initdb, pg_ctl, awk, apache2, python, sudo, busser, sh) and not proc.cmdline in (bash /usr/sbin/logcheck)
+  condition: spawned_process and container and shell_procs and proc.pname exists and not proc.pname in (shell_binaries, docker_binaries, initdb, pg_ctl, awk, apache2, python, sudo, busser, sh, init, apt-get, dpkg-preconfigu, install-info, cloud-init, ifup, pycompile, pip, ruby) and not proc.cmdline in ("bash /usr/sbin/logcheck")
 {% else %}
-  condition: spawned_process and container and shell_procs and proc.pname exists and not proc.pname in (shell_binaries, docker_binaries, initdb, pg_ctl, awk, apache2) and not proc.cmdline in (bash /usr/sbin/logcheck)
+  condition: spawned_process and container and shell_procs and proc.pname exists and not proc.pname in (shell_binaries, docker_binaries, initdb, pg_ctl, awk, apache2) and not proc.cmdline in ("bash /usr/sbin/logcheck")
 {% endif %}
   output: "Shell spawned in a container other than entrypoint (user=%user.name container_id=%container.id container_name=%container.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline)"
   priority: WARNING
@@ -350,7 +356,7 @@
 # sshd, mail programs attempt to setuid to root even when running as non-root. Excluding here to avoid meaningless FPs
 - rule: Non sudo setuid
   desc: an attempt to change users by calling setuid. sudo/su are excluded. user "root" is also excluded, as setuid calls typically involve dropping privileges.
-  condition: consider_containers and evt.type=setuid and evt.dir=> and not user.name=root and not proc.name in (userexec_binaries, mail_binaries, sshd, dbus-daemon-lau)
+  condition: consider_containers and evt.type=setuid and evt.dir=> and not user.name=root and not proc.name in (userexec_binaries, mail_binaries, sshd, dbus-daemon-lau, ping, ping6)
 #  condition: not container and evt.type=setuid and evt.dir=> and not user.name=root and not userexec_binaries and not proc.name in (sshd, sendmail-msp, sendmail, postfix, smtp, apt-get) and not (user.name=messagebus and proc.name=dbus-daemon-launch-helper) and not (user.name=proxy and proc.name in (squid, pinger)) and not (user.name=nobody and proc.name=lxd)
   output: "Unexpected setuid call by non-sudo, non-root program (user=%user.name parent=%proc.pname command=%proc.cmdline uid=%evt.arg.uid)"
   priority: WARNING

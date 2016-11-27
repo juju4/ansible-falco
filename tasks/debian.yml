@@ -9,6 +9,7 @@
   apt: name={{item}} state=present
   with_items:
     - "linux-headers-{{ ansible_kernel }}"
+    - sysdig-dkms
   ignore_errors: true
 
 - name: apt | falco install
