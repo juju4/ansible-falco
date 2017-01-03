@@ -1,3 +1,4 @@
+## {{ ansible_managed }}
 #############
 # Definitions
 #############
@@ -113,7 +114,7 @@
 # The truncated dpkg-preconfigu is intentional, process names are
 # truncated at the sysdig level.
 - list: package_mgmt_binaries
-  items: [dpkg, dpkg-preconfigu, rpm, rpmkey, yum, frontend]
+  items: [dpkg, dpkg-preconfigu, apt-get, apt, aptitude, rpm, rpmkey, yum, frontend, update-alternat, unattended-upgr, linux-image-4.4]
 
 - macro: package_mgmt_procs
   condition: proc.name in (package_mgmt_binaries)
@@ -127,10 +128,25 @@
 # A canonical set of processes that run other programs with different
 # privileges or as a different user.
 - list: userexec_binaries
-  items: [sudo, su]
+  items: [sudo, su, critical-stack]
 
 - list: user_mgmt_binaries
   items: [login_binaries, passwd_binaries, shadowutils_binaries]
+
+- list: hids_procs
+  items: [aide, aide.wrapper, update-aide.con, logcheck, syslog-summary]
+
+- list: nids_procs
+  items: [bro, broctl, syslog-summary]
+
+## cacti: perl, php, php5-fpm
+## nrpe
+- list: monitoring_procs
+#  items: [nagios, icinga2, nrpe, perl, php, php5-fpm, npcd]
+  items: [icinga2, nrpe, perl, php, php5-fpm, check_sar_perf.]
+
+- list: orchestration_procs
+  items: [ansible, python, sshd]
 
 - macro: system_procs
   condition: proc.name in (coreutils_binaries, user_mgmt_binaries)
@@ -185,6 +201,9 @@
   condition: evt.num>0
 {% endif %}
 
+- macro: nids_broctl
+  condition: user.name == 'root' and proc.name == 'bash' and proc.pname == 'python' and (proc.cmdline contains 'bash /opt/bro/share/broctl/scripts/helpers/df ' or proc.cmdline contains 'sh -c /opt/bro/share/broctl/scripts/stats-to-csv')
+
 ###############
 # General Rules
 ###############
@@ -195,10 +214,12 @@
   output: "File below a known binary directory opened for writing (user=%user.name command=%proc.cmdline file=%fd.name)"
   priority: WARNING
 
+## insserv: boot sequence organizer using LSB init.d
+## rollerd: dnssec-tools
 - macro: write_etc_common
   condition: >
     etc_dir and evt.dir = < and open_write
-    and not proc.name in (shadowutils_binaries, sysdigcloud_binaries, package_mgmt_binaries, ssl_mgmt_binaries, dhcp_binaries, ldconfig.real, ldconfig)
+    and not proc.name in (shadowutils_binaries, sysdigcloud_binaries, package_mgmt_binaries, ssl_mgmt_binaries, dhcp_binaries, ldconfig.real, ldconfig, insserv, rollerd)
     and not proc.pname in (sysdigcloud_binaries)
     and not fd.directory in (/etc/cassandra, /etc/ssl/certs/java)
 
@@ -227,8 +248,7 @@
 
 - rule: Read sensitive file untrusted
   desc: an attempt to read any sensitive file (e.g. files containing user/password/authentication information). Exceptions are made for known trusted programs.
-#  condition: not container and open_read and not user_mgmt_binaries and not userexec_binaries and not proc.name in (iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, bash, sshd, systemd, aide, lxd, dpkg, dpkg-preconfigure, dpkg-preconfigu, frontend, man-db.postinst, passwd) and not cron and sensitive_files
-  condition: consider_containers and sensitive_files and open_read and not proc.name in (user_mgmt_binaries, userexec_binaries, package_mgmt_binaries, cron_binaries, iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, shell_binaries, sshd, aide, systemd) and not proc.cmdline contains /usr/bin/mandb and not proc.cmdline contains "cmp -s shadow.bak /etc/shadow"
+  condition: consider_containers and sensitive_files and open_read and not proc.name in (user_mgmt_binaries, userexec_binaries, package_mgmt_binaries, cron_binaries, iptables, ps, lsb_release, check-new-relea, dumpe2fs, accounts-daemon, shell_binaries, sshd, hids_procs, systemd) and not proc.cmdline contains /usr/bin/mandb and not proc.cmdline contains "cmp -s shadow.bak /etc/shadow"
   output: "Sensitive file opened for reading by non-trusted program (user=%user.name name=%proc.name command=%proc.cmdline file=%fd.name)"
   priority: WARNING
 
@@ -286,11 +306,11 @@
 - rule: Run shell untrusted
   desc: an attempt to spawn a shell by a non-shell program. Exceptions are made for trusted binaries.
 {% if 'mhnserver' in group_names %}
-  condition: consider_containers and spawned_process and not container and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, man-db, falco, logrotate, logcheck, syslog-summary, aide, update-aide.conf, update-aide.con, nrpe, check_updates.p, icinga2, npcd, apt-get, celery, python, uwsgi, fail2ban-server)
+  condition: consider_containers and spawned_process and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, package_mgmt_binaries, nids_procs, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, man-db, falco, logrotate, hids_procs, nrpe, check_updates.p, icinga2, npcd, celery, python, uwsgi, fail2ban-server, mkinitramfs, update-menus, aspell-autobuil, gem) and not nids_broctl
 {% elif falco_containers_lxckitchen is defined and falco_containers_lxckitchen %}
-  condition: consider_containers and spawned_process and not container and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, man-db, falco, logrotate, logcheck, syslog-summary, aide, update-aide.conf, update-aide.con, nrpe, check_updates.p, icinga2, npcd, apt-get, fail2ban-server, lxd, kitchen, command.rb)
+  condition: consider_containers and spawned_process and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, package_mgmt_binaries, nids_procs, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, man-db, falco, logrotate, hids_procs, nrpe, check_updates.p, icinga2, npcd, fail2ban-server, lxd, kitchen, command.rb, mkinitramfs, update-menus, aspell-autobuil, gem) and not nids_broctl
 {% else %}
-  condition: consider_containers and spawned_process and not container and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, man-db, falco, logrotate, logcheck, syslog-summary, aide, update-aide.conf, update-aide.con, nrpe, check_updates.p, icinga2, npcd, apt-get, fail2ban-server)
+  condition: consider_containers and spawned_process and shell_procs and proc.pname exists and not proc.pname in (cron_binaries, shell_binaries, package_mgmt_binaries, nids_procs, sshd, sudo, docker_binaries, su, tmux, screen, emacs, systemd, login, flock, fbash, nginx, monit, supervisord, dragent, aws, initdb, docker-compose, make, configure, awk, man-db, falco, logrotate, hids_procs, nrpe, check_updates.p, icinga2, npcd, fail2ban-server, mkinitramfs, pycompile, py3compile, update-menus, aspell-autobuil, gem) and not nids_broctl
 {% endif %}
   output: "Shell spawned by untrusted binary (user=%user.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline)"
   priority: WARNING
@@ -324,15 +344,16 @@
   output: "System user ran an interactive command (user=%user.name command=%proc.cmdline)"
   priority: WARNING
 
-## Shell spawned in a container other than entrypoint (user=root container_id=default-ubuntu-1404-1472173593 container_name=default-ubuntu-1404-1472173593 shell=bash parent=sudo cmdline=bash -c [ -d /etc/ansible ] || mkdir /etc/ansible)
-## Shell spawned in a container other than entrypoint (user=root container_id=default-ubuntu-1404-1472173593 container_name=default-ubuntu-1404-1472173593 shell=bash parent=busser cmdline=bash ./install.sh /tmp/verifier/vendor/bats)
-## Shell spawned in a container other than entrypoint (user=arpwatch container_id=dle1 container_name=dle1 shell=bash parent=sh cmdline=bash /usr/sbin/logcheck)
+## typical cases
+## ansible: python, sshd
 - rule: Run shell in container
   desc: a shell was spawned by a non-shell program in a container. Container entrypoints are excluded.
-{% if falco_containers_lxckitchen is defined and falco_containers_lxckitchen %}
-  condition: spawned_process and container and shell_procs and proc.pname exists and not proc.pname in (shell_binaries, docker_binaries, initdb, pg_ctl, awk, apache2, python, sudo, busser, sh, init, apt-get, dpkg-preconfigu, install-info, cloud-init, ifup, pycompile, pip, ruby) and not proc.cmdline in ("bash /usr/sbin/logcheck")
+{% if falco_containers_ansible is defined and falco_containers_ansible %}
+  condition: spawned_process and container and shell_procs and proc.pname exists and not proc.pname in (shell_binaries, docker_binaries, package_mgmt_binaries, hids_procs, nids_procs, monitoring_procs, initdb, pg_ctl, awk, apache2, python, sudo, busser, sh, init, install-info, cloud-init, ifup, mkinitramfs, man-db, cron, lxd, sshd, pycompile, py3compile, pip, pip3, ruby, cron, syslog-summary, logrotate) and not proc.cmdline in ("bash /usr/sbin/logcheck")
+{% elif falco_containers_lxckitchen is defined and falco_containers_lxckitchen %}
+  condition: spawned_process and container and shell_procs and proc.pname exists and not proc.pname in (shell_binaries, docker_binaries, package_mgmt_binaries, hids_procs, nids_procs, monitoring_procs, initdb, pg_ctl, awk, apache2, python, sudo, busser, sh, init, install-info, cloud-init, ifup, mkinitramfs, man-db, cron, lxd, pycompile, py3compile, pip, pip3, ruby, cron, syslog-summary, logrotate) and not proc.cmdline in ("bash /usr/sbin/logcheck")
 {% else %}
-  condition: spawned_process and container and shell_procs and proc.pname exists and not proc.pname in (shell_binaries, docker_binaries, initdb, pg_ctl, awk, apache2) and not proc.cmdline in ("bash /usr/sbin/logcheck")
+  condition: spawned_process and container and shell_procs and proc.pname exists and not proc.pname in (shell_binaries, docker_binaries, package_mgmt_binaries, hids_procs, nids_procs, monitoring_procs, initdb, pg_ctl, awk, apache2, install-info, cloud-init, ifup, mkinitramfs, man-db, cron, lxd, logrotate) and not proc.cmdline in ("bash /usr/sbin/logcheck")
 {% endif %}
   output: "Shell spawned in a container other than entrypoint (user=%user.name container_id=%container.id container_name=%container.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline)"
   priority: WARNING
@@ -357,7 +378,6 @@
 - rule: Non sudo setuid
   desc: an attempt to change users by calling setuid. sudo/su are excluded. user "root" is also excluded, as setuid calls typically involve dropping privileges.
   condition: consider_containers and evt.type=setuid and evt.dir=> and not user.name=root and not proc.name in (userexec_binaries, mail_binaries, sshd, dbus-daemon-lau, ping, ping6)
-#  condition: not container and evt.type=setuid and evt.dir=> and not user.name=root and not userexec_binaries and not proc.name in (sshd, sendmail-msp, sendmail, postfix, smtp, apt-get) and not (user.name=messagebus and proc.name=dbus-daemon-launch-helper) and not (user.name=proxy and proc.name in (squid, pinger)) and not (user.name=nobody and proc.name=lxd)
   output: "Unexpected setuid call by non-sudo, non-root program (user=%user.name parent=%proc.pname command=%proc.cmdline uid=%evt.arg.uid)"
   priority: WARNING
 
