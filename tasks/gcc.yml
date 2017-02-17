@@ -1,0 +1,20 @@
+---
+
+- name: ensure gcc is present
+  package: name=gcc state=present
+
+- name: check if gcc path exists
+  stat: path=/usr/bin/gcc
+  register: gcc
+- name: check if gcc-5 path exists
+  stat: path=/usr/bin/gcc-5
+  register: gcc5
+
+#- debug: var=gcc
+#- debug: var=gcc5
+
+- name: Ubuntu xenial | update default config to gcc-5 for gcc
+#  command: "update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5"
+  command: "update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60"
+  when: (not gcc.stat.exists or (gcc.stat.lnk_source is defined and gcc.stat.lnk_source == "/usr/bin/None")) and gcc5.stat.exists and ansible_os_family == 'Debian'
+

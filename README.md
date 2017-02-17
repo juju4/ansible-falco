@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/juju4/ansible-falco.svg?branch=master)](https://travis-ci.org/juju4/ansible-falco)
+[![Build Status - Master](https://travis-ci.org/juju4/ansible-falco.svg?branch=master)](https://travis-ci.org/juju4/ansible-falco)
+[![Build Status - Devel](https://travis-ci.org/juju4/ansible-falco.svg?branch=devel)](https://travis-ci.org/juju4/ansible-falco/branches)
 # Falco Behavioral activity monitor ansible role
 
 Ansible role to setup Falco
