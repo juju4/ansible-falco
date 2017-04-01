@@ -447,7 +447,8 @@
 #    and not parent_ansible_running_python
 {% endif %}
 #  output: "Shell spawned by untrusted binary (user=%user.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline pcmdline=%proc.pcmdline)"
-  output: "Shell spawned by untrusted binary (user=%user.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline %evt.args)"
+#  output: "Shell spawned by untrusted binary (user=%user.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline %evt.args)"
+  output: "Shell spawned by untrusted binary (user=%user.name shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline)"
   priority: WARNING
 
 - macro: trusted_containers
