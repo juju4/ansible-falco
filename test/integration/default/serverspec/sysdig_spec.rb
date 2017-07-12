@@ -3,7 +3,7 @@ require 'serverspec'
 # Required by serverspec
 set :backend, :exec
 
-describe package('sysdig') do
+describe package('sysdig-dkms') do
   it { should be_installed }
 end
 
