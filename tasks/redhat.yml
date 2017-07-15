@@ -16,4 +16,5 @@
   with_items:
     - dkms
     - falco
+    - sysdig
 
