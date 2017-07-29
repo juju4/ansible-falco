@@ -156,7 +156,7 @@
   items: [bro, broctl]
 
 - list: monitoring_binaries
-  items: [icinga2, nrpe, npcd, check_sar_perf.]
+  items: [icinga2, nrpe, npcd, check_sar_perf., netdata]
 
 - list: orchestration_binaries
   items: [ansible, ansible-playboo, python, sshd]
@@ -495,7 +495,7 @@
     and shell_procs
     and proc.pname exists
     and not proc.pname in (shell_binaries, docker_binaries, k8s_binaries, lxd_binaries, aide_wrapper_binaries, nids_binaries,
-                           known_shell_spawn_binaries_lxdcontainers,
+                           known_shell_spawn_binaries_lxdcontainers, package_mgmt_binaries
                            monitoring_binaries, package_mgmt_binaries, initdb, pg_ctl, awk, apache2, falco, cron,
                            busser, sshd, sudo, python, pip2, python3, pip3, pycompile, py3compile, ruby)
     and not trusted_containers
@@ -506,6 +506,7 @@
     and shell_procs
     and proc.pname exists
     and not proc.pname in (shell_binaries, docker_binaries, k8s_binaries, lxd_binaries, aide_wrapper_binaries, nids_binaries,
+                           package_mgmt_binaries,
                            monitoring_binaries, cisystem_binaries, initdb, pg_ctl, awk, apache2, falco, cron,
                            busser, sshd, sudo, python, pip, pip2, python3, pip3, pycompile, py3compile, ruby)
     and not trusted_containers
