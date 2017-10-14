@@ -1,0 +1,46 @@
+# {{ ansible_managed }}
+####################
+# Your custom rules!
+####################
+
+# Add new rules, like this one
+# - rule: The program "sudo" is run in a container
+#   desc: An event will trigger every time you run sudo in a container
+#   condition: evt.type = execve and evt.dir=< and container.id != host and proc.name = sudo
+#   output: "Sudo run in container (user=%user.name %container.info parent=%proc.pname cmdline=%proc.cmdline)"
+#   priority: ERROR
+#   tags: [users, container]
+
+# Or override/append to any rule, macro, or list from the Default Rules
+
+# user: root, arpwatch, snmp, dnsmasq
+- list: known_shell_spawn_binaries_lxdcontainers
+  items: [
+    ansible-playboo, python, pip2,
+    sshd, sudo, init, ifup, ohai, apt-get,
+# arpwatch?
+#    syslog-summary,
+# cacti?
+    perl
+    ]
+
+- macro: consider_containers
+{% if falco_dontwatch_containers %}
+  condition: not container
+{% else %}
+  condition: evt.num>0
+{% endif %}
+
+# Warning Shell spawned by untrusted binary (user=nagios shell=sh parent=python cmdline=sh -c sar -w 1 1)
+# Warning Shell spawned by untrusted binary (user=root shell=sh parent=python cmdline=sh -c which time) == very wide...
+- macro: monitoring_activity_legacy
+  condition: >
+    (user.name=nagios and proc.pname=python)
+
+# Shell spawned in a container other than entrypoint (user=root default-centos-6-1485875131 (id=default-centos-6-1485875131) shell=sh parent=init cmdline=sh -e -c exec /sbin/mingetty --nohangup $TTY /bin/sh)
+# Shell spawned by untrusted binary (user=jenkins shell=sh parent=java cmdline=sh -c echo $$ > '/var/lib/jenkins/workspace/_ansible-role_master-BIQGZQIFDDLMCQEUVCQNOXJVMRMUVDPFY4FQGT7O2QCXYC4PAACQ@tmp/durable-16c5cb60/pid'; jsc=durable-8c84ff2ebe8d8618f39c001e1eedb088; JENKINS_SERVER_COOKIE=$jsc '/var/lib/jenkins/workspace/_ansible-role_master-BIQGZQIFDDLMCQEUVCQNOXJVMRMUVDPFY4FQGT7O2QCXYC4PAACQ@tmp/durable-16c5cb60/script.sh' > '/var/lib/jenkins/workspace/_ansible-role_master-BIQGZQIFDDLMCQEUVCQNOXJVMRMUVDPFY4FQGT7O2QCXYC4PAACQ@tmp/durable-16c5cb60/jenkins-log.txt' 2>&1; echo $? > '/var/lib/jenkins/workspace/_ansible-role_master-BIQGZQIFDDLMCQEUVCQNOXJVMRMUVDPFY4FQGT7O2QCXYC4PAACQ@tmp/durable-16c5cb60/jenkins-result.txt')
+- macro: jenkins_activity
+  condition: >
+    (user.name=jenkins and proc.pname=java and proc.name=sh)
+
+
