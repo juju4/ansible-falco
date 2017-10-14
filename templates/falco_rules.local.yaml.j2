@@ -24,13 +24,6 @@
     perl
     ]
 
-- macro: consider_containers
-{% if falco_dontwatch_containers %}
-  condition: not container
-{% else %}
-  condition: evt.num>0
-{% endif %}
-
 # Warning Shell spawned by untrusted binary (user=nagios shell=sh parent=python cmdline=sh -c sar -w 1 1)
 # Warning Shell spawned by untrusted binary (user=root shell=sh parent=python cmdline=sh -c which time) == very wide...
 - macro: monitoring_activity_legacy

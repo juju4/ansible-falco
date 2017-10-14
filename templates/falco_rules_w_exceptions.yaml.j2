@@ -434,6 +434,13 @@
 - macro: java_running_sdjagent
   condition: proc.name=java and proc.cmdline contains sdjagent.jar
 
+- macro: consider_containers
+{% if falco_dontwatch_containers %}
+  condition: not container
+{% else %}
+  condition: evt.num>0
+{% endif %}
+
 ###############
 # General Rules
 ###############
