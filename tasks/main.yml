@@ -15,14 +15,16 @@
   notify:
     - restart falco
 - name: configure falco rules
-#  template: src=falco_rules.yaml.j2 dest=/etc/falco_rules.yaml mode=0644
-#  template: src=falco_rules_w_exceptions.yaml.j2 dest=/etc/falco_rules.yaml mode=0644 backup=yes validate='falco -l %s'
-  template: src=falco_rules_w_exceptions.yaml.j2 dest=/etc/falco_rules.yaml mode=0644 backup=yes
+  template:
+    src: falco_rules_w_exceptions.yaml.j2
+    dest: /etc/falco_rules.yaml
+    mode: '0644'
+    backup: yes
+    validate: 'falco -V %s'
   notify:
     - restart falco
   register: rules
-## as we currently can't validate only the rules file
-- name: trigger validation as we changed rules
+- name: trigger whole validation as we changed rules
   command: "falco -v -L"
   when: rules.changed
   changed_when: false
@@ -32,5 +34,3 @@
   service: name=falco enabled=yes state=started
   when: not (ansible_virtualization_type is defined and (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker"))
 ## note: for containers, it will not be possible to match kernel headers/devel which means module compilation fails. only observed on centos7
-
-
