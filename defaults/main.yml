@@ -13,8 +13,8 @@ falco_rules_files:
   - /etc/falco/falco_rules.yaml
   - /etc/falco/falco_rules.local.yaml
 falco_config_template_upload:
-  - { s: falco_rules_w_exceptions.yaml.j2, d: falco_rules.yaml }
-  - { s: falco_rules.local.yaml.j2, d: falco_rules.local.yaml }
+  - { s: falco_rules_w_exceptions.yaml, d: falco_rules.yaml }
+  - { s: falco_rules.local.yaml, d: falco_rules.local.yaml }
 
 ## else some macro can be very verbose (ex: on LXD or lxd+kitchen)
 falco_dontwatch_containers: true
