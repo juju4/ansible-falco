@@ -9,8 +9,9 @@
 # The files will be read in the order presented here, so make sure if
 # you have overrides they appear in later files.
 rules_file:
- - /etc/falco/falco_rules.yaml
- - /etc/falco/falco_rules.local.yaml
+{% for f in falco_rules_files %}
+ - {{ f }}
+{% endfor %}
 
 # Whether to output events in json or text
 json_output: {{ falco_json_output }}

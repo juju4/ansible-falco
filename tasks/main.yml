@@ -22,17 +22,15 @@
 
 - name: configure falco rules
   template:
-    src: "{{ item.s }}"
-    dest: "{{ item.d }}"
+    src: "{{ item.s }}.j2"
+    dest: "/etc/falco/{{ item.d }}"
     mode: '0644'
     backup: yes
     validate: 'falco -V %s'
   notify:
     - restart falco
   register: rules
-  with_items:
-    - { s: falco_rules_w_exceptions.yaml.j2, d: /etc/falco/falco_rules.yaml }
-    - { s: falco_rules.local.yaml.j2, d: /etc/falco/falco_rules.local.yaml }
+  with_items: "{{ falco_config_template_upload }}"
 
 - name: trigger whole validation as we changed rules
   command: "falco -v -L"
