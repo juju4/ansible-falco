@@ -10,11 +10,17 @@
 - include: redhat.yml
   when: ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
+- name: check falco config directory permissions
+  file:
+    dest: /etc/falco
+    state: directory
+    mode: '0700'
+
 - name: configure falco
   template:
     src: falco.yaml.j2
     dest: /etc/falco/falco.yaml
-    mode: 0644
+    mode: '0600'
     backup: yes
     validate: 'falco -c %s -L'
   notify:
@@ -24,7 +30,7 @@
   template:
     src: "{{ item.s }}.j2"
     dest: "/etc/falco/{{ item.d }}"
-    mode: '0644'
+    mode: '0600'
     backup: yes
     validate: 'falco -V %s'
   notify:
