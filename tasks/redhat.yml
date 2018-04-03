@@ -4,6 +4,7 @@
   rpm_key:
     state: present
     key: https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public
+
 - name: yum | install draios repository
   get_url:
     url: http://download.draios.com/stable/rpm/draios.repo

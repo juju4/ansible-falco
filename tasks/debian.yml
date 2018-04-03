@@ -1,20 +1,32 @@
 ---
 
 - name: add draios key
-  apt_key: url=https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public state=present
+  apt_key:
+    url: https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public
+    state: present
 - name: install draios apt source
-  get_url: url=http://download.draios.com/stable/deb/draios.list dest=/etc/apt/sources.list.d/draios.list mode=0444 checksum='sha256:e9e2ed7d6f02607d855cfe14ef3d37eb13bdb75cecb735b93f12c9af6693185f'
+  get_url:
+    url: http://download.draios.com/stable/deb/draios.list
+    dest: /etc/apt/sources.list.d/draios.list
+    mode: 0444
+    checksum: 'sha256:e9e2ed7d6f02607d855cfe14ef3d37eb13bdb75cecb735b93f12c9af6693185f'
 
 ## to ensure gcc available for dkms
 - include: gcc.yml
 
 - name: apt | kernel headers install
-  apt: name={{item}} state=present
+  apt:
+    name: "{{item}}"
+    state: present
   with_items:
     - "linux-headers-{{ ansible_kernel }}"
     - sysdig-dkms
   ignore_errors: true
 
 - name: apt | falco install
-  apt: name=falco state=present update_cache=yes
+  apt:
+    name: falco
+    state: present
+    update_cache: yes
 
+...
