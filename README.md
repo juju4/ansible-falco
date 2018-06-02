@@ -11,6 +11,7 @@ https://github.com/draios/falco
 ### Ansible
 It was tested on the following versions:
  * 2.0
+ * 2.5
 
 ### Operating systems
 
@@ -37,13 +38,13 @@ This role has a travis basic test (for github), more advanced with kitchen and a
 
 Once you ensured all necessary roles are present, You can test with:
 ```
-$ cd /path/to/roles/falco
+$ cd /path/to/roles/juju4.falco
 $ kitchen verify
 $ kitchen login
 ```
 or
 ```
-$ cd /path/to/roles/falco/test/vagrant
+$ cd /path/to/roles/juju4.falco/test/vagrant
 $ vagrant up
 $ vagrant ssh
 ```
