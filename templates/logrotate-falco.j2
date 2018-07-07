@@ -1,0 +1,12 @@
+{{ ansible_managed | comment('plain', decoration='## ') }}
+## /etc/logrotate.d/falco
+{{ falco_syslog_target }} {
+    rotate {{ falco_logrotate_days|int }}
+    daily
+    missingok
+    notifempty
+    delaycompress
+    compress
+    create 640 root adm
+    sharedscripts
+}

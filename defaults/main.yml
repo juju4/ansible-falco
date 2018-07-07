@@ -21,3 +21,5 @@ falco_dontwatch_containers: true
 falco_containers_ansible: false
 falco_containers_lxckitchen: false
 
+falco_syslog_target: /var/log/falco/falco.log
+falco_logrotate_days: 90

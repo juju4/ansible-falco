@@ -1,0 +1,14 @@
+---
+
+- name: ensure logrotate package is present
+  package:
+    name: logrotate
+    state: present
+
+- name: add logrotate configuration for falco log
+  template:
+    src: logrotate-falco.j2
+    dest: /etc/logrotate.d/falco
+    mode: '0644'
+    backup: yes
+    validate: 'logrotate -dv %s'
