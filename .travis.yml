@@ -41,42 +41,48 @@ services:
 before_install:
   # - sudo apt-get update
   # Pull container
-  - 'sudo docker pull ${distribution}:${version}'
+  - 'docker pull ${distribution}:${version}'
   - env
   - pwd
   - find -ls
   - "[ -f get-dependencies.sh ] && sh -x get-dependencies.sh"
   - cp test/travis/initctl_faker test/
   # Customize container
-  - 'sudo docker build --rm=true --file=test/travis/Dockerfile.${distribution}-${version} --tag=${distribution}-${version}:ansible test'
+  - 'docker build --rm=true --file=test/travis/Dockerfile.${distribution}-${version} --tag=${distribution}-${version}:ansible test'
 
 script:
   - container_id=$(mktemp)
     # Run container in detached state
-  - 'sudo docker run --detach --volume="${PWD%/*}":/etc/ansible/roles:ro ${run_opts} ${distribution}-${version}:ansible "${init}" > "${container_id}"'
+  - 'docker run --detach --volume="${PWD%/*}":/etc/ansible/roles:ro ${run_opts} ${distribution}-${version}:ansible "${init}" > "${container_id}"'
 
-  - 'sudo docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible --version'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible --version'
 
   # Ansible syntax check.
-  - 'sudo docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/juju4.falco/test/integration/default/default.yml --syntax-check'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/juju4.falco/test/integration/default/default.yml --syntax-check'
 
   # Test role.
-  - 'sudo docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/juju4.falco/test/integration/default/default.yml -vvv'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/juju4.falco/test/integration/default/default.yml -vvv'
 
   # Test role idempotence.
   - >
-    sudo docker exec "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/juju4.falco/test/integration/default/default.yml
+    docker exec "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/juju4.falco/test/integration/default/default.yml
     | tee /tmp/idempotency.log
     | grep -q 'changed=0.*failed=0'
     && (echo 'Idempotence test: pass' && exit 0)
     || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 1)
 
-  # serverspec tests
-## travis/docker: Errno::EROFS: Read-only file system @ dir_s_mkdir - /etc/ansible/roles/juju4.falco/test/integration/default/serverspec/.bundle
-#  - 'sudo docker exec --tty "$(cat ${container_id})" /etc/ansible/roles/juju4.falco/test/integration/default/serverspec/run-local-tests.sh'
+after_failure:
+  # Check what happened on systemd systems.
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm systemctl -l --no-pager status falco'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm journalctl -xe --no-pager'
 
+after_script:
+  - '[ "X${distribution}" == "Xubuntu" ] && sudo docker exec "$(cat ${container_id})" wget https://packages.chef.io/files/stable/inspec/2.3.4/ubuntu/18.04/inspec_2.3.4-1_amd64.deb || true'
+  - '[ "X${distribution}" == "Xubuntu" ] && sudo docker exec "$(cat ${container_id})" dpkg -i inspec_2.3.4-1_amd64.deb || true'
+  - '[ "X${distribution}" == "Xcentos" ] && sudo docker exec "$(cat ${container_id})" rpm -Uvh https://packages.chef.io/files/stable/inspec/2.3.4/el/7/inspec-2.3.4-1.el7.x86_64.rpm || true'
+  - 'docker exec "$(cat ${container_id})" /opt/inspec/bin/inspec exec https://github.com/juju4/inspec-falco/archive/master.tar.gz'
   # Clean up
-  - 'sudo docker stop "$(cat ${container_id})"'
+  - 'docker stop "$(cat ${container_id})"'
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/
