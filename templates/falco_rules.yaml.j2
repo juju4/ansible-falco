@@ -137,7 +137,7 @@
   items: [docker, dockerd, exe, docker-compose, docker-entrypoi, docker-runc-cur, docker-current]
 
 - list: k8s_binaries
-  items: [hyperkube, skydns, kube2sky, exechealthz, weave-net]
+  items: [hyperkube, skydns, kube2sky, exechealthz, weave-net, loopback, bridge]
 
 - list: lxd_binaries
   items: [lxd, lxcfs]
@@ -228,24 +228,6 @@
 
 - list: nomachine_binaries
   items: [nxexec, nxnode.bin, nxserver.bin, nxclient.bin]
-
-- list: x2go_binaries
-  items: [x2gosuspend-age, x2goagent, x2gomountdirs]
-
-- list: xray_rabbitmq_binaries
-  items: ['"1_scheduler"', '"2_scheduler"', '"3_scheduler"', '"4_scheduler"']
-
-- list: nids_binaries
-  items: [bro, broctl]
-
-- list: monitoring_binaries
-  items: [icinga2, nrpe, npcd, check_sar_perf., qualys-cloud-ag, S99qualys-cloud, nagios]
-
-- list: orchestration_procs
-  items: [ansible, ansible-playboo, python, sshd]
-
-- list: testing_procs
-  items: [kitchen, command.rb]
 
 - macro: system_procs
   condition: proc.name in (coreutils_binaries, user_mgmt_binaries)
@@ -604,6 +586,9 @@
 - macro: iscsi_writing_conf
   condition: (proc.name=iscsiadm and fd.name startswith /etc/iscsi)
 
+- macro: istio_writing_conf
+  condition: (proc.name=pilot-agent and fd.name startswith /etc/istio)
+
 - macro: symantec_writing_conf
   condition: >
     ((proc.name=symcfgd and fd.name startswith /etc/symantec) or
@@ -699,6 +684,9 @@
 - macro: chef_writing_conf
   condition: (proc.name=chef-client and fd.name startswith /root/.chef)
 
+- macro: kubectl_writing_state
+  condition: (proc.name=kubectl and fd.name startswith /root/.kube)
+
 - rule: Write below binary dir
   desc: an attempt to write to any file below a set of binary directories
   condition: >
@@ -728,6 +716,13 @@
 - macro: user_ssh_directory
   condition: (fd.name startswith '/home' and fd.name contains '.ssh')
 
+# google_accounts_(daemon)
+- macro: google_accounts_daemon_writing_ssh
+  condition: (proc.name=google_accounts and user_ssh_directory)
+
+- macro: cloud_init_writing_ssh
+  condition: (proc.name=cloud-init and user_ssh_directory)
+
 - macro: mkinitramfs_writing_boot
   condition: (proc.pname in (mkinitramfs, update-initramf) and fd.directory=/boot)
 
@@ -746,6 +741,8 @@
     and not exe_running_docker_save
     and not python_running_get_pip
     and not python_running_ms_oms
+    and not google_accounts_daemon_writing_ssh
+    and not cloud_init_writing_ssh
   output: >
     File below a monitored directory opened for writing (user=%user.name
     command=%proc.cmdline file=%fd.name parent=%proc.pname pcmdline=%proc.pcmdline gparent=%proc.aname[2])
@@ -842,6 +839,9 @@
 - macro: dpkg_scripting
   condition: (proc.aname[2] in (dpkg-reconfigur, dpkg-preconfigu))
 
+- macro: ufw_writing_conf
+  condition: proc.name=ufw and fd.directory=/etc/ufw
+
 # Add conditions to this macro (probably in a separate file,
 # overwriting this macro) to allow for specific combinations of
 # programs writing below specific directories below
@@ -871,7 +871,7 @@
                           gen_resolvconf., update-ca-certi, certbot, runsv,
                           qualys-cloud-ag, locales.postins, nomachine_binaries,
                           adclient, certutil, crlutil, pam-auth-update, parallels_insta,
-                          openshift-launc, update-rc.d, ufw, cloud-init)
+                          openshift-launc, update-rc.d)
     and not proc.pname in (sysdigcloud_binaries, mail_config_binaries, hddtemp.postins, sshkit_script_binaries, locales.postins, deb_binaries, dhcp_binaries)
     and not fd.name pmatch (safe_etc_dirs)
     and not fd.name in (/etc/container_environment.sh, /etc/container_environment.json, /etc/motd, /etc/motd.svc)
@@ -942,6 +942,8 @@
     and not openldap_writing_conf
     and not ucpagent_writing_conf
     and not iscsi_writing_conf
+    and not istio_writing_conf
+    and not ufw_writing_conf
 
 - rule: Write below etc
   desc: an attempt to write to any file below /etc
@@ -953,7 +955,7 @@
 - list: known_root_files
   items: [/root/.monit.state, /root/.auth_tokens, /root/.bash_history, /root/.ash_history, /root/.aws/credentials,
           /root/.viminfo.tmp, /root/.lesshst, /root/.bzr.log, /root/.gitconfig.lock, /root/.babel.json, /root/.localstack,
-          /root/.node_repl_history, /root/.mongorc.js, /root/.dbshell, /root/.augeas/history, /root/.rnd, /root/.wget-hsts]
+          /root/.node_repl_history, /root/.mongorc.js, /root/.dbshell, /root/.augeas/history, /root/.rnd, /root/.wget-hsts, /health]
 
 - list: known_root_directories
   items: [/root/.oracle_jre_usage, /root/.ssh, /root/.subversion, /root/.nami]
@@ -1009,6 +1011,7 @@
     and not rpm_writing_root_rpmdb
     and not maven_writing_groovy
     and not chef_writing_conf
+    and not kubectl_writing_state
     and not known_root_conditions
   output: "File below / or /root opened for writing (user=%user.name command=%proc.cmdline parent=%proc.pname file=%fd.name program=%proc.name)"
   priority: ERROR
@@ -1164,27 +1167,6 @@
   priority: NOTICE
   tags: [process]
 
-- list: known_shell_spawn_binaries
-  items: [
-    sshd, sudo, su, tmux, screen, emacs, systemd, login, flock, fbash,
-    nginx, monit, supervisord, dragent, aws, awslogs, initdb, docker-compose,
-    configure, awk, falco, fail2ban-server, fleetctl,
-    logrotate, ansible, less, adduser, pycompile, py3compile,
-    pyclean, py3clean, pip, pip2, ansible-playboo, man-db,
-    init, pluto, mkinitramfs, unattended-upgr, watch, sysdig,
-    landscape-sysin, nessusd, PM2, syslog-summary, erl_child_setup, erlexec,
-    npm, cloud-init, toybox, ceph, hhvm, certbot,
-    serf, a2enmod, runsv, supervisord, varnishd, authconfig, tini,
-    timeout, updatedb.findut, adclient, systemd-udevd,
-    luajit, uwsgi, cfn-signal, apache_control_, beam.smp, paster, postfix-local,
-    nginx_control, mailmng-service, web_statistic_e, statistics_coll, install-info,
-    hawkular-metric, rhsmcertd-worke, parted, amuled, fluentd, x2gormforward,
-    parallels_insta, salt-minion, dnsmng, update-inetd, pum_worker, awstats_buildst,
-    tsvuln, 50plesk-daily, grubby, chkconfig, dracut-install, rhnsd, find, consul,
-    doxygen, Cypress, consul-template, xargs, scl, awstats_updatea, sa-update,
-    mysql_upgrade, opkg-cl, vmtoolsd, confd
-    ]
-
 # The binaries in this list and their descendents are *not* allowed
 # spawn shells. This includes the binaries spawning shells directly as
 # well as indirectly. For example, apache -> php/perl for
@@ -1223,9 +1205,6 @@
 
 - macro: parent_java_running_datastax
   condition: (proc.pname=java and proc.pcmdline contains com.datastax)
-
-- macro: parent_java_running_sumologic
-  condition: (proc.pname=java and proc.pcmdline contains com.sumologic)
 
 - macro: nginx_starting_nginx
   condition: (proc.pname=nginx and proc.cmdline contains "/usr/sbin/nginx -c /etc/nginx/nginx.conf")
@@ -1417,6 +1396,7 @@
 - macro: sensitive_mount
   condition: (container.mount.dest[/proc*] != "N/A" or
               container.mount.dest[/var/run/docker.sock] != "N/A" or
+              container.mount.dest[/var/lib/kubelet*] != "N/A" or
               container.mount.dest[/] != "N/A" or
               container.mount.dest[/etc] != "N/A" or
               container.mount.dest[/root*] != "N/A")
@@ -1637,9 +1617,6 @@
 - macro: known_user_in_container
   condition: (container and user.name != "N/A")
 
-- macro: unknown_user_in_container
-  condition: (user.name="<NA>" and container)
-
 # sshd, mail programs attempt to setuid to root even when running as non-root. Excluding here to avoid meaningless FPs
 - rule: Non sudo setuid
   desc: >
@@ -1702,14 +1679,6 @@
   output: "File created below /dev by untrusted program (user=%user.name command=%proc.cmdline file=%fd.name)"
   priority: ERROR
   tags: [filesystem]
-
-# fbash is a small shell script that runs bash, and is suitable for use in curl <curl> | fbash installers.
-- rule: Installer bash starts network server
-  desc: an attempt by a program in a pipe installer session to start listening for network connections
-  condition: evt.type=listen and proc.sname=fbash
-  output: "Unexpected listen call by a process in a fbash session (command=%proc.cmdline)"
-  priority: NOTICE
-  tags: [network]
 
 # In a local/user rules file, you could override this macro to
 # explicitly enumerate the container images that you want to allow
