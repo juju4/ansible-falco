@@ -22,7 +22,7 @@
 
 - name: yum | falco install
   yum:
-    name: "{{item}}"
+    name: "{{ item }}"
     state: present
     update_cache: yes
   with_items:
