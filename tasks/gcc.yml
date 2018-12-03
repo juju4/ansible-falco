@@ -38,5 +38,3 @@
     - gcc4.stat.exists
     - ansible_os_family == 'Debian'
     - ansible_distribution_release == 'trusty'
-
-...

@@ -4,7 +4,7 @@
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
 - import_tasks: redhat.yml
-  when: ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  when: ansible_os_family == "RedHat"
 
 - name: check falco config directory permissions
   file:
@@ -47,5 +47,9 @@
 
 - name: ensure service falco enabled and started - not in containers
   service: name=falco enabled=yes state=started
-  when: not (ansible_virtualization_type is defined and (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker"))
-## note: for containers, it will not be possible to match kernel headers/devel which means module compilation fails. only observed on centos7
+  when: >
+    not (ansible_virtualization_type is defined and
+          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker")
+        )
+## note: for containers, it will not be possible to match kernel headers/devel
+##    which means module compilation fails. only observed on centos7

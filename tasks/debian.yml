@@ -16,7 +16,7 @@
 
 - name: apt | kernel headers install
   apt:
-    name: "{{item}}"
+    name: "{{ item }}"
     state: present
   with_items:
     - "linux-headers-{{ ansible_kernel }}"
