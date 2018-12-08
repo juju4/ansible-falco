@@ -10,3 +10,7 @@
 
 - name: restart rsyslog
   service: name=rsyslog state=restarted
+
+- name: falco global check
+  command: "falco -v -L"
+  changed_when: false

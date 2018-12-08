@@ -30,14 +30,10 @@
     backup: yes
     validate: 'falco -V %s'
   notify:
+    - falco global check
     - restart falco
   register: rules
   with_items: "{{ falco_config_template_upload }}"
-
-- name: trigger whole validation as we changed rules
-  command: "falco -v -L"
-  when: rules.changed
-  changed_when: false
 
 - include: rsyslog.yml
 - include: logrotate.yml
