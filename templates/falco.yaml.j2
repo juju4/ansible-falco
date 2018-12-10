@@ -89,5 +89,12 @@ program_output:
   enabled: true
   keep_alive: false
   program: mail -s "Falco Notification" {{ falco_program_output_email }}
+{% elif falco_slack_output is defined and falco_slack_output and falco_json_output %}
+# https://github.com/falcosecurity/falco/wiki/Falco-Alerts#program-output-example-posting-to-a-slack-incoming-webhook
+# Requires falco_json_output to be true
+# Can't be combined with any other program_output for now
+program_output:
+  enabled: true
+  program: "jq '{text: .output}' | curl -d @- -X POST {{ falco_slack_output_webhook }}"
 {% endif %}
 

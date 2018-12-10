@@ -29,4 +29,6 @@
     update_cache: yes
   with_items:
     - falco
+    - jq          # Slack output depends on jq
+    - mailutils   # Mail output depends on mailutils
     - sysdig-dkms
