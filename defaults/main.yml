@@ -1,5 +1,5 @@
 ---
-  
+
 falco_json_output: false
 falco_log_stderr: true
 falco_log_stdout: true
