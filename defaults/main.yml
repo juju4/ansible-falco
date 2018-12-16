@@ -36,3 +36,5 @@ falco_cgroups_restriction_enable: true
 #falco_cgroups_memorylimit: '1G'
 #falco_cgroups_cpushares: '1024'
 falco_systemd_restriction_enable: true
+# as systemd service
+falco_service_enabled: true

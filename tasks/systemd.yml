@@ -1,22 +1,56 @@
 ---
 
-- name: Hardened options for falco systemd
-  blockinfile:
-    # or /etc/systemd/system/falco.service.d/override.conf
-    path: /usr/lib/systemd/system/falco.service
-    insertafter: ^KillSignal=SIGTERM
-    block: |
-      NoNewPrivileges=yes
-      PrivateTmp=true
-      ProtectHome=read-only
-      ProtectSystem=full
-      ProtectKernelTunables=true
-      RestrictRealtime=true
-      RestrictAddressFamilies=AF_UNIX
-      SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @privileged
-      MemoryDenyWriteExecute=true
-      PrivateMounts=true
-    backup: yes
-  notify:
-    - reload systemd
-    - restart falco
+- block:
+    - name: install falco systemd configuration
+      template:
+        src: "systemd-{{ item }}.service.j2"
+        dest: "/lib/systemd/system/{{ item }}.service"
+        mode: '0644'
+        backup: yes
+      with_items:
+        - falco
+      register: systemdconf
+      ignore_errors: true
+      notify:
+        - reload systemd
+        - restart falco
+    - block:
+        - include: "immutable.yml target_dir=/lib/systemd/system state=pre"
+        - name: install falco systemd configuration
+          template:
+            src: "systemd-{{ item }}.service.j2"
+            dest: "/lib/systemd/system/{{ item }}.service"
+            mode: '0644'
+            backup: yes
+          with_items:
+            - falco
+          notify:
+            - reload systemd
+            - restart falco
+        - include: "immutable.yml target_dir=/lib/systemd/system state=post"
+      when: systemdconf is failed
+    - block:
+        - name: enable and start falco systemd services
+          service:
+            name: "{{ item }}"
+            enabled: yes
+            state: 'started'
+          ignore_errors: true
+          with_items:
+            - falco
+      when: falco_service_enabled
+    - block:
+        - name: disable and stop falco systemd service
+          service:
+            name: "{{ item }}"
+            enabled: no
+            state: 'stopped'
+          ignore_errors: true
+          with_items:
+            - falco
+      when: not falco_service_enabled
+    - name: Remove init.d script
+      file:
+        path: /etc/init.d/falco
+        state: absent
+  when: ansible_service_mgr == 'systemd'
