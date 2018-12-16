@@ -14,3 +14,7 @@
 - name: falco global check
   command: "falco -v -L"
   changed_when: false
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes

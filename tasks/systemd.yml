@@ -1,0 +1,22 @@
+---
+
+- name: Hardened options for falco systemd
+  blockinfile:
+    # or /etc/systemd/system/falco.service.d/override.conf
+    path: /usr/lib/systemd/system/falco.service
+    insertafter: ^KillSignal=SIGTERM
+    block: |
+      NoNewPrivileges=yes
+      PrivateTmp=true
+      ProtectHome=read-only
+      ProtectSystem=full
+      ProtectKernelTunables=true
+      RestrictRealtime=true
+      RestrictAddressFamilies=AF_UNIX
+      SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @privileged
+      MemoryDenyWriteExecute=true
+      PrivateMounts=true
+    backup: yes
+  notify:
+    - reload systemd
+    - restart falco
