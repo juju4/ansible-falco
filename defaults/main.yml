@@ -9,6 +9,11 @@ falco_file_output_path: './events.txt'
 falco_stdout_output: false
 falco_program_output: false
 falco_program_output_email: 'someone@example.com'
+# falco_slack_output depends on falco_json_output
+# falco_slack_output can't be combined with falco_program_output
+falco_slack_output: false
+falco_slack_output_webhook: 'https://hooks.slack.com/services/XXX'
+
 falco_rules_files:
   - /etc/falco/falco_rules.yaml
   - /etc/falco/falco_rules.local.yaml
