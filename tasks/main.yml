@@ -49,10 +49,10 @@
 - include: logrotate.yml
 
 - include: cgroups.yml
-  when: falco_cgroups_restriction_enable
+  when: falco_cgroups_restriction_enable and ansible_service_mgr == 'systemd'
 
 - include: systemd.yml
-  when: falco_systemd_restriction_enable
+  when: falco_systemd_restriction_enable and ansible_service_mgr == 'systemd'
 
 - name: print ansible_virtualization_type when verbosity is 1
   debug: var=ansible_virtualization_type verbosity=1
