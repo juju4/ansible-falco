@@ -15,23 +15,17 @@
 
 - name: yum | kernel-devel install
   yum:
-    name: "{{ item }}"
+    name: "kernel-devel-{{ ansible_kernel }}"
     state: present
     update_cache: yes
-  with_items:
-    - "kernel-devel-{{ ansible_kernel }}"
   ignore_errors: true
   register: pkg_result
   until: pkg_result is success
 
 - name: yum | falco install
   yum:
-    name: "{{ item }}"
+    name: "{{ falco_pkgs }}"
     state: present
     update_cache: yes
-  with_items:
-    - dkms
-    - falco
-    - sysdig
   register: pkg_result
   until: pkg_result is success

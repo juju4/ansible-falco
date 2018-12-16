@@ -18,23 +18,16 @@
 
 - name: apt | kernel headers install
   apt:
-    name: "{{ item }}"
+    name: "linux-headers-{{ ansible_kernel }}"
     state: present
-  with_items:
-    - "linux-headers-{{ ansible_kernel }}"
   ignore_errors: true
   register: pkg_result
   until: pkg_result is success
 
 - name: apt | falco install
   apt:
-    name: "{{ item }}"
+    name: "{{ falco_pkgs }}"
     state: present
     update_cache: yes
-  with_items:
-    - falco
-    - jq          # Slack output depends on jq
-    - mailutils   # Mail output depends on mailutils
-    - sysdig-dkms
   register: pkg_result
   until: pkg_result is success
