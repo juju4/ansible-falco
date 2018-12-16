@@ -4,6 +4,8 @@
   rpm_key:
     state: present
     key: https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public
+  register: pkg_result
+  until: pkg_result is success
 
 - name: yum | install draios repository
   get_url:
@@ -19,6 +21,8 @@
   with_items:
     - "kernel-devel-{{ ansible_kernel }}"
   ignore_errors: true
+  register: pkg_result
+  until: pkg_result is success
 
 - name: yum | falco install
   yum:
@@ -29,3 +33,5 @@
     - dkms
     - falco
     - sysdig
+  register: pkg_result
+  until: pkg_result is success

@@ -4,6 +4,8 @@
   package:
     name: rsyslog
     state: present
+  register: pkg_result
+  until: pkg_result is success
 
 - name: get rsyslog version
   command: "rsyslogd -v | awk -F'[ ,]' '/rsyslogd/ { print $2 }'"

@@ -4,6 +4,8 @@
   apt_key:
     url: https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public
     state: present
+  register: pkg_result
+  until: pkg_result is success
 - name: install draios apt source
   get_url:
     url: http://download.draios.com/stable/deb/draios.list
@@ -21,6 +23,8 @@
   with_items:
     - "linux-headers-{{ ansible_kernel }}"
   ignore_errors: true
+  register: pkg_result
+  until: pkg_result is success
 
 - name: apt | falco install
   apt:
@@ -32,3 +36,5 @@
     - jq          # Slack output depends on jq
     - mailutils   # Mail output depends on mailutils
     - sysdig-dkms
+  register: pkg_result
+  until: pkg_result is success

@@ -4,6 +4,8 @@
   package:
     name: gcc
     state: present
+  register: pkg_result
+  until: pkg_result is success
 
 - name: check if gcc path exists
   stat:
