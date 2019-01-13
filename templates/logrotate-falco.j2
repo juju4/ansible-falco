@@ -1,4 +1,4 @@
-{{ ansible_managed | comment('plain', decoration='## ') }}
+{{ ansible_managed | comment }}
 ## /etc/logrotate.d/falco
 {{ falco_syslog_target }} {
     rotate {{ falco_logrotate_days|int }}
