@@ -23,5 +23,6 @@ galaxy_info:
   galaxy_tags:
   - system
   - security
+  - logging
 dependencies:
   - juju4.redhat_epel
