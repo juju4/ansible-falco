@@ -56,12 +56,11 @@
       register: initd
       ignore_errors: true
     - block:
-        - include: "immutable.yml target_dir=/etc/init.d state=pre"
+        - include: "immutable.yml target_dir=/etc/init.d/falco state=pre"
         - name: Remove init.d script
           file:
             path: /etc/init.d/falco
             state: absent
-    - block:
         - include: "immutable.yml target_dir=/etc/init.d state=post"
       when: initd is failed
   when: ansible_service_mgr == 'systemd'
