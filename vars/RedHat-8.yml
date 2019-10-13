@@ -1,0 +1,6 @@
+---
+
+falco_pkgs:
+    - dkms
+    - falco
+    - sysdig
