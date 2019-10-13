@@ -52,6 +52,8 @@ script:
     # Run container in detached state
   - 'docker run --detach --volume="${PWD%/*}":/etc/ansible/roles:ro ${run_opts} ${distribution}-${version}:ansible "${init}" > "${container_id}"'
 
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip --version || true'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip3 --version || true'
   - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible --version'
 
   # Ansible syntax check.
@@ -69,6 +71,9 @@ script:
     || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 0)
 
 after_failure:
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ls -l /usr/bin/ | egrep "(python|pip|ansible)"'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip freeze'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip3 freeze'
   # Check what happened on systemd systems.
   - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm systemctl -l --no-pager status falco'
   - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm journalctl -xe --no-pager'
