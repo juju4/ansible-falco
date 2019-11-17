@@ -83,9 +83,9 @@ after_failure:
   - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm journalctl -xe --no-pager'
 
 after_script:
-  - '[ "X${distribution}" == "Xubuntu" ] && sudo docker exec "$(cat ${container_id})" apt-get install -y wget'
-  - '[ "X${distribution}" == "Xubuntu" ] && sudo docker exec "$(cat ${container_id})" wget https://packages.chef.io/files/stable/inspec/4.18.39/ubuntu/18.04/inspec_4.18.39-1_amd64.deb'
-  - '[ "X${distribution}" == "Xubuntu" ] && sudo docker exec "$(cat ${container_id})" dpkg -i inspec_4.18.39-1_amd64.deb'
+  - '[ "X${distribution}" == "Xubuntu" -o "X${distribution}" == "Xdebian" ] && sudo docker exec "$(cat ${container_id})" apt-get install -y wget'
+  - '[ "X${distribution}" == "Xubuntu" -o "X${distribution}" == "Xdebian" ] && sudo docker exec "$(cat ${container_id})" wget https://packages.chef.io/files/stable/inspec/4.18.39/ubuntu/18.04/inspec_4.18.39-1_amd64.deb'
+  - '[ "X${distribution}" == "Xubuntu" -o "X${distribution}" == "Xdebian" ] && sudo docker exec "$(cat ${container_id})" dpkg -i inspec_4.18.39-1_amd64.deb'
   - '[ "X${distribution}" == "Xcentos" ] && sudo docker exec "$(cat ${container_id})" rpm -Uvh https://packages.chef.io/files/stable/inspec/4.18.39/el/7/inspec-4.18.39-1.el7.x86_64.rpm'
   - 'docker exec "$(cat ${container_id})" /opt/inspec/bin/inspec --chef-license accept'
   - 'docker exec "$(cat ${container_id})" /opt/inspec/bin/inspec exec https://github.com/juju4/inspec-falco/archive/master.tar.gz'
