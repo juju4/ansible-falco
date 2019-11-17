@@ -22,13 +22,17 @@ provisioner:
 platforms:
   - name: ubuntu-18.04
   - name: ubuntu-16.04
-  - name: ubuntu-14.04
+#  - name: ubuntu-14.04
 #  - name: ubuntu-12.04
+  - name: centos-8
   - name: centos-7
 #  - name: centos-6
 ## "Failed to complete #create action: [Broken pipe] on default-alpine-34"
 ## do we have python2 in default image?
 #  - name: alpine-3.4
+  - name: debian-10
+  - name: debian-9
+  - name: debian-8
 
 suites:
   - name: default

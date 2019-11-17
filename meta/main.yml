@@ -21,6 +21,11 @@ galaxy_info:
     - trusty
     - xenial
     - bionic
+  - name: Debian
+    versions:
+    - 8
+    - 9
+    - 10
   galaxy_tags:
   - system
   - security
