@@ -6,4 +6,4 @@ falco_pkgs:
     - mailutils   # Mail output depends on mailutils
 #    - sysdig-dkms
 
-syslog_user: syslog
+syslog_user: root
