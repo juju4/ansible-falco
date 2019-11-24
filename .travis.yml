@@ -76,6 +76,9 @@ script:
 
 after_failure:
   - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ls -l /usr/bin/ | egrep "(python|pip|ansible)"'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm cat /etc/passwd'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm rsyslogd -v'
+  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm find /etc/rsyslog.* -type f -exec cat {} \;'
   - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip freeze'
   - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip3 freeze'
   # Check what happened on systemd systems.
