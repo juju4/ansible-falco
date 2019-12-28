@@ -21,6 +21,16 @@
     mode: '0755'
     owner: "{{ syslog_user }}"
     group: root
+  when: "'/var/log/' in falco_syslog_target"
+
+- name: Ensure log file have right permissions
+  file:
+    dest: "{{ falco_syslog_target }}"
+    state: touch
+    mode: '0644'
+    owner: "{{ syslog_user }}"
+    group: root
+  when: "'/var/log/' in falco_syslog_target"
 
 - name: setup rsyslog to send falco logs to a specific target
   template:
