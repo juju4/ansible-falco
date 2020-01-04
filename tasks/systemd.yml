@@ -16,18 +16,18 @@
         - restart falco
     - block:
         - include: "immutable.yml target_dir=/lib/systemd/system state=pre"
-        - name: install falco systemd configuration
+        - include: "immutable.yml target_dir=/lib/systemd/system/falco.service state=pre"
+        - name: install falco systemd configuration (immutable)
           template:
-            src: "systemd-{{ item }}.service.j2"
-            dest: "/lib/systemd/system/{{ item }}.service"
+            src: "systemd-falco.service.j2"
+            dest: "/lib/systemd/system/falco.service"
             mode: '0644'
             backup: yes
-          with_items:
-            - falco
           notify:
             - reload systemd
             - restart falco
         - include: "immutable.yml target_dir=/lib/systemd/system state=post"
+        - include: "immutable.yml target_dir=/lib/systemd/system/falco.service state=post"
       when: systemdconf is failed
     - block:
         - name: enable and start falco systemd services
@@ -56,7 +56,7 @@
       register: initd
       ignore_errors: true
     - block:
-        - include: "immutable.yml target_dir=/etc/init.d state=pre"
+        - include: "immutable.yml target_dir=/etc/init.d/ state=pre"
         - include: "immutable.yml target_dir=/etc/init.d/falco state=pre"
         - name: Remove init.d script
           file:
