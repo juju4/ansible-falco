@@ -21,7 +21,14 @@
     mode: '0755'
     owner: "{{ syslog_user }}"
     group: root
-  when: "'/var/log/' in falco_syslog_target"
+  when: >
+    "'/var/log/' in falco_syslog_target" and
+    falco_syslog_target|dirname != '/var/log'
+
+- name: Check if falco syslog file exists
+  stat:
+    path: "{{ falco_syslog_target }}"
+  register: falcolog
 
 - name: Ensure log file have right permissions
   file:
@@ -30,7 +37,9 @@
     mode: '0644'
     owner: "{{ syslog_user }}"
     group: root
-  when: "'/var/log/' in falco_syslog_target"
+  when:
+    - "'/var/log/' in falco_syslog_target"
+    - not falcolog.stat.exists
 
 - name: setup rsyslog to send falco logs to a specific target
   template:
