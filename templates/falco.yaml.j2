@@ -30,7 +30,7 @@
 # you have overrides they appear in later files.
 rules_file:
 {% for f in falco_rules_files %}
- - {{ f }}
+  - {{ f }}
 {% endfor %}
 
 # If true, the times displayed in log messages and output messages
@@ -39,7 +39,7 @@ rules_file:
 time_format_iso_8601: false
 
 # Whether to output events in json or text
-json_output: {{ falco_json_output }}
+json_output: {{ falco_json_output | lower }}
 
 # When using json output, whether or not to include the "output" property
 # itself (e.g. "File below a known binary directory opened for writing
@@ -48,8 +48,8 @@ json_include_output_property: true
 
 # Send information logs to stderr and/or syslog Note these are *not* security
 # notification logs! These are just Falco lifecycle (and possibly error) logs.
-log_stderr: {{ falco_log_stderr }}
-log_syslog: {{ falco_log_stdout }}
+log_stderr: {{ falco_log_stderr | lower }}
+log_syslog: {{ falco_log_stdout | lower }}
 
 # Minimum log level to include in logs. Note: these levels are
 # separate from the priority field of rules. This refers only to the
@@ -107,7 +107,7 @@ outputs:
 # Multiple outputs can be enabled.
 
 syslog_output:
-  enabled: {{ falco_syslog_output }}
+  enabled: {{ falco_syslog_output | lower }}
 
 # If keep_alive is set to true, the file will be opened once and
 # continuously written to, with each output message on its own
@@ -118,12 +118,12 @@ syslog_output:
 # SIGUSR1.
 
 file_output:
-  enabled: {{ falco_file_output }}
+  enabled: {{ falco_file_output | lower }}
   keep_alive: false
   filename: {{ falco_file_output_path }}
 
 stdout_output:
-  enabled: {{ falco_stdout_output }}
+  enabled: {{ falco_stdout_output | lower }}
 
 # Falco contains an embedded webserver that can be used to accept K8s
 # Audit Events. These config options control the behavior of that
@@ -137,7 +137,7 @@ stdout_output:
 # $ sudo cp falco.pem /etc/falco/falco.pem
 
 webserver:
-  enabled: {{ falco_webserver_enable | default(false) }}
+  enabled: {{ falco_webserver_enable | default('false') | lower }}
   listen_port: 8765
   k8s_audit_endpoint: /k8s_audit
   ssl_enabled: false
