@@ -34,7 +34,7 @@
   file:
     dest: "{{ falco_syslog_target }}"
     state: touch
-    mode: '0644'
+    mode: '0640'
     owner: "{{ syslog_user }}"
     group: root
   when:
