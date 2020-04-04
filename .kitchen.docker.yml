@@ -27,7 +27,6 @@ platforms:
 # https://github.com/test-kitchen/kitchen-docker/issues/285
       provision_command: mkdir -p /run/sshd
   - name: ubuntu-16.04
-  - name: ubuntu-14.04
   - name: centos-8
   - name: centos-7
   - name: debian-10
