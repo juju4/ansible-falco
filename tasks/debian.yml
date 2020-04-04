@@ -1,5 +1,10 @@
 ---
 
+- name: apt | ensure apt-transport-https is present
+  apt:
+    name: apt-transport-https
+    state: present
+
 - name: add draios key
   apt_key:
     url: https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public
