@@ -30,7 +30,6 @@ platforms:
 #  - name: alpine-3.4
   - name: debian-10
   - name: debian-9
-  - name: debian-8
 
 suites:
   - name: default
