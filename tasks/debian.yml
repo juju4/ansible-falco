@@ -11,7 +11,7 @@
     url: http://download.draios.com/stable/deb/draios.list
     dest: /etc/apt/sources.list.d/draios.list
     mode: 0444
-    checksum: 'sha256:e9e2ed7d6f02607d855cfe14ef3d37eb13bdb75cecb735b93f12c9af6693185f'
+    checksum: 'sha256:6905dcd6d297c4e3fc0df1a25679b1e15c4517e3fd5d197cea7840cc947436bd'
 
 ## to ensure gcc available for dkms
 - include: gcc.yml
