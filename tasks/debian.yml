@@ -13,7 +13,7 @@
   until: pkg_result is success
 - name: install draios apt source
   apt_repository:
-    repo: "https://dl.bintray.com/falcosecurity/deb stable main"
+    repo: "deb https://dl.bintray.com/falcosecurity/deb stable main"
     filename: falcosecurity
     mode: 0444
     state: present
