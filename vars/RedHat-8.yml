@@ -3,6 +3,5 @@
 falco_pkgs:
     - dkms
     - falco
-    - sysdig
 
 syslog_user: root
