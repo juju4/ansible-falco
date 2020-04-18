@@ -1,16 +1,16 @@
 ---
 
-- name: yum | install draios repository key
+- name: yum | install falcosecurity repository key
   rpm_key:
     state: present
-    key: https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public
+    key: https://falco.org/repo/falcosecurity-3672BA8F.asc
   register: pkg_result
   until: pkg_result is success
 
-- name: yum | install draios repository
+- name: yum | install falcosecurity repository
   get_url:
-    url: http://download.draios.com/stable/rpm/draios.repo
-    dest: /etc/yum.repos.d/draios.repo
+    url: https://falco.org/repo/falcosecurity-rpm.repo
+    dest: /etc/yum.repos.d/falcosecurity.repo
     mode: 0644
 
 - name: yum | kernel-devel install

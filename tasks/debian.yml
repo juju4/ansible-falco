@@ -7,16 +7,16 @@
 
 - name: add draios key
   apt_key:
-    url: https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public
+    url: https://falco.org/repo/falcosecurity-3672BA8F.asc
     state: present
   register: pkg_result
   until: pkg_result is success
 - name: install draios apt source
-  get_url:
-    url: http://download.draios.com/stable/deb/draios.list
-    dest: /etc/apt/sources.list.d/draios.list
+  apt_repository:
+    repo: "https://dl.bintray.com/falcosecurity/deb stable main"
+    filename: falcosecurity
     mode: 0444
-    checksum: 'sha256:6905dcd6d297c4e3fc0df1a25679b1e15c4517e3fd5d197cea7840cc947436bd'
+    state: present
 
 ## to ensure gcc available for dkms
 - include: gcc.yml
