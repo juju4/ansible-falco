@@ -62,7 +62,7 @@ before_install:
   - sudo sysctl -w net.ipv4.tcp_timestamps=1
 
   - sudo pip install ansible ansible-lint
-  - gem install kitchen
+  - gem install test-kitchen --version "=1.25.0"
   - gem install kitchen-ansible
   - gem install kitchen-sync
   - gem install kitchen-lxd_cli
@@ -72,7 +72,7 @@ before_install:
   - ls ~/.ssh
   - ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -P ""
 ## sudo/su get us a non-usual PATH ...
-  - '[ "X${distribution}" == "Xcentos" ] && sudo -E su $USER -c "sh -x ./test/lxd/centos-ssh-image.sh" || true'
+  - '[ "X${distribution}" == "Xcentos" ] && sudo -E su $USER -c "sh -x ./test/lxd/centos-ssh-image.sh ${version}" || true'
   - sudo -E su $USER -c "env"
   - sudo -E su $USER -c "env PATH=$PATH kitchen diagnose --all"
 #  - sudo -E su $USER -c "kitchen diagnose --all"
