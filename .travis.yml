@@ -1,92 +1,105 @@
 ---
-## from https://github.com/geerlingguy/ansible-role-apache/blob/master/.travis.yml
+dist: xenial
 sudo: required
+rvm:
+  - 2.6
 
 env:
   - distribution: centos
     version: 8
-    init: /usr/lib/systemd/systemd
-    run_opts: "'--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro'"
+    suite: default
   - distribution: centos
     version: 7
-    init: /usr/lib/systemd/systemd
-    run_opts: "'--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro'"
+    suite: default
   - distribution: ubuntu
     version: 18.04
-    init: /lib/systemd/systemd
-    run_opts: "'--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro'"
+    suite: default
   - distribution: ubuntu
     version: 16.04
-    init: /lib/systemd/systemd
-    run_opts: "'--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro'"
-  - distribution: debian
-    version: 9
-    init: /lib/systemd/systemd
-    run_opts: "'--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro'"
-  - distribution: debian
-    version: 10
-    init: /lib/systemd/systemd
-    run_opts: "'--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro'"
-
-services:
-  - docker
+    suite: default
 
 before_install:
-  # - sudo apt-get update
-  # Pull container
-  - 'docker pull ${distribution}:${version}'
   - env
   - pwd
   - find -ls
+## use appropriate role path and not github name
   - "[ -f get-dependencies.sh ] && sh -x get-dependencies.sh"
-  - cp test/travis/initctl_faker test/
-  # Customize container
-  - 'docker build --rm=true --file=test/travis/Dockerfile.${distribution}-${version} --tag=${distribution}-${version}:ansible test'
+  - echo "deb http://archive.ubuntu.com/ubuntu xenial-backports main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/xenial-backports.list
+  - sudo apt-get update -qq
+  - sudo apt -t xenial-backports -y install lxd acl dnsmasq-base zfsutils-linux -q
+## change of group implies logout+login to apply... can't do with travis = run as root (sic)
+## https://github.com/travis-ci/travis-ci/issues/1839   or chain: sudo -E su $USER -c "..."
+  - sudo usermod -G lxd travis
+  # Pull container
+#  - lxc remote add images images.linuxcontainers.org
+  - sudo -E su $USER -c "lxc remote list"
+  - sudo -E su $USER -c "lxc image list"
+## pre-download base images
+  - 'sudo -E su $USER -c "[ ${distribution} == ubuntu ] || lxc image copy images:${distribution}/${version}/amd64 local: --alias=${distribution}-${version}-nossh"'
+  - 'sudo -E su $USER -c "[ ${distribution} == ubuntu ] && lxc image copy ubuntu:${version} local: --alias=${distribution}-${version}" || true'
+## configure network
+  - ifconfig -a
+  - sudo lxc info
+  - sudo lxc network list
+  - sudo lxc network create lxdbr0
+  - sudo lxc network show lxdbr0
+  - sudo lxc network attach-profile lxdbr0 default ens4
+  - sudo lxc profile device get default ens4 nictype || true
+  - sudo service lxd restart
+  - ps ax | grep dnsmasq
+  - systemctl status -l --no-pager lxd || true
+  - cat /etc/network/interfaces.d/50-cloud-init.cfg
+  - sudo lxc network list
+# configure storage pool
+  - sudo lxc storage list
+  - sudo lxc storage create pool1 zfs
+  - sudo lxc storage list
+  - sudo zpool list
+  - sudo lxc profile device add default root disk path=/ pool=pool1
+  - sudo lxc profile show default
+# https://redis4you.com/articles.php?id=012&name=redis
+# https://vincent.bernat.ch/en/blog/2014-tcp-time-wait-state-linux
+  - sudo sysctl -w net.ipv4.tcp_timestamps=1
+
+  - sudo pip install ansible ansible-lint
+  - gem install kitchen
+  - gem install kitchen-ansible
+  - gem install kitchen-sync
+  - gem install kitchen-lxd_cli
+  - gem list
+  - which kitchen
+## ssh key for lxd_cli ?
+  - ls ~/.ssh
+  - ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -P ""
+## sudo/su get us a non-usual PATH ...
+  - '[ "X${distribution}" == "Xcentos" ] && sudo -E su $USER -c "sh -x ./test/lxd/centos-ssh-image.sh" || true'
+  - sudo -E su $USER -c "env"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen diagnose --all"
+#  - sudo -E su $USER -c "kitchen diagnose --all"
+#  - sudo -E -u $USER kitchen diagnose --all
 
 script:
-  - container_id=$(mktemp)
-    # Run container in detached state
-  - 'docker run --detach --volume="${PWD%/*}":/etc/ansible/roles:ro ${run_opts} ${distribution}-${version}:ansible "${init}" > "${container_id}"'
-
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip --version || true'
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip3 --version || true'
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible --version'
-
-  # Ansible syntax check.
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/juju4.falco/test/integration/default/default.yml --syntax-check'
-
-  # Test role.
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/juju4.falco/test/integration/default/default.yml -vvv'
-
-  # Test role idempotence.
-  - >
-    docker exec "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/juju4.falco/test/integration/default/default.yml
-    | tee /tmp/idempotency.log
-    | grep -q 'changed=0.*failed=0'
-    && (echo 'Idempotence test: pass' && exit 0)
-    || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 0)
+  - ansible-lint tasks/main.yml || true
+#  - KITCHEN_LOCAL_YAML=.kitchen.local.yml bundle exec kitchen verify ${INSTANCE}
+  - sudo -E su $USER -c "env PATH=$PATH kitchen verify ${suite}-${distribution}-${version//./} -l debug || (cat $HOME/.kitchen/logs/${suite}-${distribution}-${version//./}.log; find /tmp/kitchen)"
 
 after_failure:
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ls -l /usr/bin/ | egrep "(python|pip|ansible)"'
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm cat /etc/passwd'
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm rsyslogd -v'
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm find /etc/rsyslog.* -type f -exec cat {} \;'
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm ls -la /var/log/'
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip freeze'
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm pip3 freeze'
-  # Check what happened on systemd systems.
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm systemctl -l --no-pager status falco'
-  - 'docker exec --tty "$(cat ${container_id})" env TERM=xterm journalctl -xe --no-pager'
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'ls -l /usr/bin/ | egrep "(python|pip|ansible)'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'cat /etc/passwd'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'rsyslogd -v'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'find /etc/rsyslog.* -type f -exec cat {} \;'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'ls -la /var/log/'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'pip freeze'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'pip3 freeze'"
 
 after_script:
-  - '[ "X${distribution}" == "Xubuntu" -o "X${distribution}" == "Xdebian" ] && sudo docker exec "$(cat ${container_id})" apt-get install -y wget'
-  - '[ "X${distribution}" == "Xubuntu" -o "X${distribution}" == "Xdebian" ] && sudo docker exec "$(cat ${container_id})" wget https://packages.chef.io/files/stable/inspec/4.18.39/ubuntu/18.04/inspec_4.18.39-1_amd64.deb'
-  - '[ "X${distribution}" == "Xubuntu" -o "X${distribution}" == "Xdebian" ] && sudo docker exec "$(cat ${container_id})" dpkg -i inspec_4.18.39-1_amd64.deb'
-  - '[ "X${distribution}" == "Xcentos" ] && sudo docker exec "$(cat ${container_id})" rpm -Uvh https://packages.chef.io/files/stable/inspec/4.18.39/el/7/inspec-4.18.39-1.el7.x86_64.rpm'
-  - 'docker exec "$(cat ${container_id})" /opt/inspec/bin/inspec --chef-license accept'
-  - 'docker exec "$(cat ${container_id})" /opt/inspec/bin/inspec exec https://github.com/juju4/inspec-falco/archive/master.tar.gz'
-  # Clean up
-  - 'docker stop "$(cat ${container_id})"'
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'ps auxw'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'netstat -tunap'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'ss -nlp'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'systemctl -l --no-pager status falco'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'systemctl -l --no-pager status'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen exec ${suite}-${distribution}-${version//./} -c 'journalctl -xe --no-pager'"
+  - sudo -E su $USER -c "env PATH=$PATH kitchen destroy ${suite}-${distribution}-${version//./}"
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/
