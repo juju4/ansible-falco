@@ -16,8 +16,8 @@ provisioner:
   ansible_extra_flags: <%= ENV['ANSIBLE_EXTRA_FLAGS'] %>
 
 platforms:
+  - name: ubuntu-20.04
   - name: ubuntu-18.04
-  - name: ubuntu-16.04
   - name: centos-7
   - name: debian-10
   - name: debian-9
