@@ -11,9 +11,12 @@
     state: present
   register: pkg_result
   until: pkg_result is success
+
 - name: install draios apt source
+  vars:
+    pkg_name: "{{'deb-dev' if (falco_dev) else 'deb'}}"
   apt_repository:
-    repo: "deb https://dl.bintray.com/falcosecurity/deb stable main"
+    repo: "deb https://dl.bintray.com/falcosecurity/{{ pkg_name }} stable main"
     filename: falcosecurity
     mode: 0444
     state: present
