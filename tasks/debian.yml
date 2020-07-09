@@ -5,14 +5,14 @@
     name: apt-transport-https
     state: present
 
-- name: add draios key
+- name: add falcosecurity key
   apt_key:
     url: https://falco.org/repo/falcosecurity-3672BA8F.asc
     state: present
   register: pkg_result
   until: pkg_result is success
 
-- name: install draios apt source
+- name: install falcosecurity apt source
   vars:
     pkg_name: "{{'deb-dev' if (falco_dev) else 'deb'}}"
   apt_repository:
