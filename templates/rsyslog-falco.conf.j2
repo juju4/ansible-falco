@@ -1,7 +1,7 @@
 {{ ansible_managed | comment }}
 {% if falco_syslog_target is defined and falco_syslog_target != '' %}
 if $programname == 'falco' then            {{ falco_syslog_target }}
-{% if rsyslog_v.stdout is defined and rsyslog_v.stdout and rsyslog_v.stdout|string is version_compare('8.0', '<') %}
+{% if rsyslog_v is defined and rsyslog_v and rsyslog_v|string is version('8.0', '<') %}
 & ~
 {% else %}
 & stop
