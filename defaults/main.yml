@@ -1,5 +1,6 @@
 ---
 
+falco_dev: false
 falco_json_output: false
 falco_log_stderr: true
 falco_log_stdout: true
@@ -38,3 +39,4 @@ falco_cgroups_restriction_enable: true
 falco_systemd_restriction_enable: true
 # as systemd service
 falco_service_enabled: true
+falco_grpc_unix_enabled: false

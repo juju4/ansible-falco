@@ -8,8 +8,10 @@
   until: pkg_result is success
 
 - name: yum | install falcosecurity repository
+  vars:
+    repo_name: "{{'falcosecurity-rpm-dev.repo' if (falco_dev) else 'falcosecurity-rpm.repo'}}"
   get_url:
-    url: https://falco.org/repo/falcosecurity-rpm.repo
+    url: "https://falco.org/repo/{{ repo_name }}"
     dest: /etc/yum.repos.d/falcosecurity.repo
     mode: 0644
 

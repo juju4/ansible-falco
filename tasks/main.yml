@@ -22,6 +22,12 @@
     state: directory
     mode: '0700'
 
+- name: get falco version
+  shell: "falco --version | grep Falco | cut -d ' ' -f 3"
+  register: falco_version
+  changed_when: false
+  ignore_errors: true
+
 - name: configure falco
   template:
     src: falco.yaml.j2
