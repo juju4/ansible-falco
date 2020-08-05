@@ -172,9 +172,10 @@ program_output:
   program: "jq '{text: .output}' | curl -d @- -X POST {{ falco_slack_output_webhook }}"
 {% endif %}
 
+
 http_output:
-  enabled: false
-  url: http://some.url
+  enabled: {{ falco_http_output_enable | default('false') | lower }}
+  url: {{ falco_http_output_url | default('http://some.url') | lower }}
 
 # Falco supports running a gRPC server with two main binding types
 # 1. Over the network with mandatory mutual TLS authentication (mTLS)
