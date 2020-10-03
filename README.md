@@ -3,8 +3,9 @@
 # Falco Behavioral activity monitor ansible role
 
 Ansible role to setup Falco
-http://www.sysdig.org/falco/
-https://github.com/draios/falco
+https://falco.org/
+https://sysdig.com/opensource/falco/
+https://github.com/falcosecurity/falco
 
 ## Requirements & Dependencies
 
