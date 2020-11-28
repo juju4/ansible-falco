@@ -1,0 +1,22 @@
+---
+
+- name: Verify
+  hosts: molecule
+  tasks:
+  - name: Ensure /etc/falco/falco.yaml config file is present
+    stat:
+      path: /etc/falco/falco.yaml
+    register: cfg2
+  - name: Validate config present
+    assert:
+      that: cfg2.stat.exists and cfg2.stat.size != 0
+
+  - name: Ensure process is running
+    command: pgrep -u root falco
+    register: ps
+    changed_when: false
+    ignore_errors: true
+  - name: Validate ps output
+    assert:
+      that: ps.stdout
+    ignore_errors: true
