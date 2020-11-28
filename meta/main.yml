@@ -11,25 +11,25 @@ galaxy_info:
   # platform on this list, let us know and we'll get it added!
   #
   platforms:
-  - name: EL
-    versions:
-     - 6
-     - 7
-     - 8
-  - name: Ubuntu
-    versions:
-    - trusty
-    - xenial
-    - bionic
-    - focal
-  - name: Debian
-    versions:
-    - 8
-    - 9
-    - 10
+    - name: EL
+      versions:
+        - 6
+        - 7
+        - 8
+    - name: Ubuntu
+      versions:
+        - trusty
+        - xenial
+        - bionic
+        - focal
+    - name: Debian
+      versions:
+        - 8
+        - 9
+        - 10
   galaxy_tags:
-  - system
-  - security
-  - logging
+    - system
+    - security
+    - logging
 dependencies:
   - juju4.redhat_epel
