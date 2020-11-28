@@ -26,6 +26,12 @@ SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @privileged
 #   ?https://www.freelists.org/post/luajit/luajit-crashes-with-grsec-kernel,1
 #MemoryDenyWriteExecute=true
 #PrivateMounts=true
- 
+
+{% if falco_cgroups_restriction_enable|bool %}
+CPUShares={{ falco_cgroups_cpushares | default('1024') }}
+CPUQuota={{ falco_cgroups_cpuquota | default('60%') }}
+MemoryLimit={{ falco_cgroups_memorylimit | default('1G') }}
+{% endif %}
+
 [Install]
 WantedBy=multi-user.target

@@ -54,9 +54,6 @@
 - include: rsyslog.yml
 - include: logrotate.yml
 
-- include: cgroups.yml
-  when: falco_cgroups_restriction_enable and ansible_service_mgr == 'systemd'
-
 - include: systemd.yml
   when: falco_systemd_restriction_enable and ansible_service_mgr == 'systemd'
 
