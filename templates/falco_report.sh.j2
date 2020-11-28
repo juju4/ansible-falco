@@ -1,0 +1,28 @@
+#!/bin/sh
+
+date=`date +%Y%m%d`
+f=/var/log/falco/falco.log
+echo
+echo
+echo "      FALCO DAILY REPORT $date for $f"
+echo
+echo
+
+tmpf=`mktemp`
+
+# remove syslog header
+awk '/{"output"/ {$1="";$2="";$3="";$4="";$5=""; gsub(/^     /, "", $0); print}' $f > $tmpf
+
+echo "** Rule matches"
+jq -r '.rule' $tmpf | sort | uniq -c | sort -nr
+echo
+echo
+
+echo "** container.id"
+jq -r '.output_fields."container.id"' $tmpf | sort |uniq -c |sort -nr
+echo "** username+cmdline+pcmdline"
+jq -r '.output_fields."user.name" + ";" + .output_fields."proc.cmdline" + ";" + .output_fields."proc.pcmdline"' $tmpf | sort |uniq -c |sort -nr
+echo "** Write below"
+jq -r 'select(.rule | startswith("Write below ")) | .output_fields."user.name" + ";" + .output_fields."proc.cmdline" + ";"' $tmpf | sort |uniq -c |sort -nr
+
+rm $tmpf

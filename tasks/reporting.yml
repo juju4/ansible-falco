@@ -1,0 +1,13 @@
+---
+
+- name: Ensure /usr/local/scripts exists
+  file:
+    dest: /usr/local/scripts
+    state: directory
+    mode: '0755'
+
+- name: Ensure reporting script exists
+  template:
+    src: "{{ falco_reporting_template }}.j2"
+    dest: "/usr/local/scripts/{{ falco_reporting_template | basename }}"
+    mode: '0755'

@@ -71,3 +71,6 @@
         )
 ## note: for containers, it will not be possible to match kernel headers/devel
 ##    which means module compilation fails. only observed on centos7
+
+- include: reporting.yml
+  when: falco_reporting
