@@ -139,7 +139,7 @@ stdout_output:
 webserver:
   enabled: {{ falco_webserver_enable | default('false') | lower }}
   listen_port: 8765
-  k8s_audit_endpoint: /k8s_audit
+  k8s_audit_endpoint: /k8s-audit
   ssl_enabled: false
   ssl_certificate: /etc/falco/falco.pem
 
@@ -163,7 +163,7 @@ program_output:
   enabled: true
   keep_alive: false
   program: mail -s "Falco Notification" {{ falco_program_output_email }}
-{% elif falco_slack_output is defined and falco_slack_output and falco_json_output %}
+{% elif falco_slack_output is defined and falco_slack_output %}
 # https://github.com/falcosecurity/falco/wiki/Falco-Alerts#program-output-example-posting-to-a-slack-incoming-webhook
 # Requires falco_json_output to be true
 # Can't be combined with any other program_output for now
@@ -188,8 +188,16 @@ http_output:
 # By default the gRPC server is off.
 # You can configure the address to bind and expose it.
 # By modifying the threadiness configuration you can fine-tune the number of threads (and context) it will use.
+# grpc:
+#   enabled: true
+#   bind_address: "0.0.0.0:5060"
+#   # when threadiness is 0, Falco sets it by automatically figuring out the number of online cores
+#   threadiness: 0
+#   private_key: "/etc/falco/certs/server.key"
+#   cert_chain: "/etc/falco/certs/server.crt"
+#   root_certs: "/etc/falco/certs/ca.crt"
+
 # gRPC server using an unix socket
-#
 grpc:
   enabled: {{ falco_grpc_unix_enabled | lower }}
   bind_address: "unix:///var/run/falco.sock"
@@ -201,7 +209,7 @@ grpc:
 {% endif %}
 
 # gRPC output service.
-# By default it is off .
+# By default it is off.
 # By enabling this all the output events will be kept in memory until you read them with a gRPC client.
 # Make sure to have a consumer for them or leave this disabled.
 grpc_output:
