@@ -1,20 +1,24 @@
 ---
 
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
 - name: restart falco
   service: name=falco state=restarted
   when: >
     not (ansible_virtualization_type is defined and
-          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker")
+          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "VirtualPC")
         )
   ignore_errors: true
 
 - name: restart rsyslog
   service: name=rsyslog state=restarted
+  when: >
+    not (ansible_virtualization_type is defined and
+          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "VirtualPC")
+        )
 
 - name: falco global check
   command: "falco -v -L"
   changed_when: false
-
-- name: reload systemd
-  systemd:
-    daemon_reload: yes
