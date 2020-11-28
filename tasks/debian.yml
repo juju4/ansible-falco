@@ -1,8 +1,8 @@
 ---
 
-- name: apt | ensure apt-transport-https is present
+- name: apt | ensure apt-transport-https and gpg are present
   apt:
-    name: apt-transport-https
+    name: [apt-transport-https, gpg]
     state: present
 
 - name: add falcosecurity key
