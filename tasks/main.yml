@@ -64,7 +64,7 @@
   service: name=falco enabled=yes state=started
   when: >
     not (ansible_virtualization_type is defined and
-          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker")
+          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "VirtualPC")
         )
 ## note: for containers, it will not be possible to match kernel headers/devel
 ##    which means module compilation fails. only observed on centos7
