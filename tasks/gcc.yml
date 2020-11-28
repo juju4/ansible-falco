@@ -24,7 +24,7 @@
   debug:
     var: gcc
     verbosity: 1
-#- debug: var=gcc5
+# - debug: var=gcc5
 
 - name: Ubuntu xenial | update default config to gcc-5 for gcc
   command: "update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60"

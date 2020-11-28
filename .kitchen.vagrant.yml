@@ -10,7 +10,7 @@ provisioner:
   name: ansible_playbook
   roles_path: ../
   hosts: all
-#  ansible_verbose: true
+  # ansible_verbose: true
   ansible_verbose: false
   ansible_verbosity: 3
   ansible_extra_flags: <%= ENV['ANSIBLE_EXTRA_FLAGS'] %>

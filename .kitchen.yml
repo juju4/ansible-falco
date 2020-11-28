@@ -9,13 +9,13 @@ provisioner:
   name: ansible_playbook
   roles_path: ../
   hosts: all
-#  ansible_verbose: true
+  # ansible_verbose: true
   ansible_verbose: false
   ansible_verbosity: 3
   ansible_extra_flags: <%= ENV['ANSIBLE_EXTRA_FLAGS'] %>
-#  require_chef_omnibus: false
+  # require_chef_omnibus: false
   require_ansible_omnibus: true
-#  require_chef_for_busser: false
+  # require_chef_for_busser: false
   enable_yum_epel: true
   ansible_connection: ssh
   ansible_omnibus_url: https://raw.githubusercontent.com/juju4/omnibus-ansible/master/ansible_install.sh
@@ -25,10 +25,6 @@ platforms:
   - name: ubuntu-18.04
   - name: centos-8
   - name: centos-7
-#  - name: centos-6
-## "Failed to complete #create action: [Broken pipe] on default-alpine-34"
-## do we have python2 in default image?
-#  - name: alpine-3.4
   - name: debian-10
   - name: debian-9
 

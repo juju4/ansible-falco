@@ -33,9 +33,9 @@ falco_syslog_target: /var/log/falco/falco.log
 falco_logrotate_days: 90
 
 falco_cgroups_restriction_enable: true
-#falco_cgroups_cpuquota: '60%'
-#falco_cgroups_memorylimit: '1G'
-#falco_cgroups_cpushares: '1024'
+# falco_cgroups_cpuquota: '60%'
+# falco_cgroups_memorylimit: '1G'
+# falco_cgroups_cpushares: '1024'
 falco_systemd_restriction_enable: true
 # as systemd service
 falco_service_enabled: true
