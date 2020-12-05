@@ -26,3 +26,4 @@ echo "** Write below"
 jq -r 'select(.rule | startswith("Write below ")) | .output_fields."user.name" + ";" + .output_fields."proc.cmdline" + ";"' $tmpf | sort |uniq -c |sort -nr
 
 rm $tmpf
+find {{ falco_reporting_dest }} -name 'falco-report-*' -mtime +{{ falco_reporting_purge | default('10') }} -exec rm {} \; 2>/dev/null
