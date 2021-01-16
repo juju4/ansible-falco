@@ -11,7 +11,7 @@
     sharedscripts
 {% if falco_reporting %}
     prerotate
-        test ! -x /usr/local/scripts/{{ falco_reporting_template | basename }} || /usr/local/scripts/{{ falco_reporting_template | basename }} > {{ falco_reporting_dest }}/falco-report-`date +%Y%m%d` 2>&1
+        test ! -x /usr/local/scripts/{{ falco_reporting_template | basename }} || sudo -u syslog /usr/local/scripts/{{ falco_reporting_template | basename }} 2>&1 | sudo -u syslog tee {{ falco_reporting_dest }}/falco-report-`date +%Y%m%d` >/dev/null
     endscript
 {% endif %}
 }
