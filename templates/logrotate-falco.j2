@@ -4,7 +4,6 @@
     rotate {{ falco_logrotate_days|int }}
     daily
     missingok
-    notifempty
     delaycompress
     compress
     create 640 {{ syslog_user }} adm
