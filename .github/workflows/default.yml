@@ -41,10 +41,13 @@ jobs:
           ansible-lint --version
           mkdir -p $HOME/.ansible/roles && ln -s $GITHUB_WORKSPACE/juju4.falco $HOME/.ansible/roles/
           mkdir -p $HOME/.cache/molecule/juju4.falco/default && ln -s $HOME/.ansible/roles $HOME/.cache/molecule/juju4.falco/default/roles
-      - name: run test
+      - name: Environment
         run: |
           pwd
+          env
           find -ls
+      - name: run test
+        run: |
           cd $GITHUB_WORKSPACE/juju4.falco && molecule test
         env:
           PY_COLORS: '1'
