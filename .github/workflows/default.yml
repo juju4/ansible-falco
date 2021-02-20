@@ -38,6 +38,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install molecule[docker] ansible-lint flake8 testinfra ansible
           mkdir -p $HOME/.ansible/roles && ln -s $GITHUB_WORKSPACE/juju4.falco $HOME/.ansible/roles/
+          mkdir -p $HOME/.cache/molecule/juju4.falco/default && ln -s $HOME/.ansible/roles $HOME/.cache/molecule/juju4.falco/default/roles
       - name: run test
         run: |
           pwd
