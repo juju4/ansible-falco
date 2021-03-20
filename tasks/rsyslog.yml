@@ -15,7 +15,8 @@
   set_fact:
     rsyslog_v: "{{ ansible_facts.packages['rsyslog'][0]['version'] }}"
 
-- debug: var=rsyslog_v verbosity=1
+- name: Debug | rsyslog version
+  debug: var=rsyslog_v verbosity=1
 
 - name: Ensure base directory exists
   file:

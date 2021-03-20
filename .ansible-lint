@@ -1,3 +1,4 @@
+---
 warn_list:
   - syntax-check  # Ansible syntax check failed
 skip_list:
