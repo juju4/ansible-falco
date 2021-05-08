@@ -16,7 +16,7 @@
   vars:
     pkg_name: "{{'deb-dev' if (falco_dev) else 'deb'}}"
   apt_repository:
-    repo: "deb https://dl.bintray.com/falcosecurity/{{ pkg_name }} stable main"
+    repo: "deb https://download.falco.org/packages/{{ pkg_name }} stable main"
     filename: falcosecurity
     mode: 0444
     state: present
