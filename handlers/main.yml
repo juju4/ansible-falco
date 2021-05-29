@@ -14,7 +14,6 @@
     not (ansible_virtualization_type is defined and
           (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "VirtualPC")
         )
-  ignore_errors: true
 
 - name: restart rsyslog
   service: name=rsyslog state=restarted

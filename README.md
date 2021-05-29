@@ -59,4 +59,3 @@ https://github.com/draios/sysdig/issues/152
 ## License
 
 BSD 2-clause
-

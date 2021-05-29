@@ -15,8 +15,7 @@
     command: pgrep -u root falco
     register: ps
     changed_when: false
-    ignore_errors: true
+    failed_when: false
   - name: Validate ps output
     assert:
       that: ps.stdout
-    ignore_errors: true
