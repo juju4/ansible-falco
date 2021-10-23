@@ -76,6 +76,6 @@ jobs:
         continue-on-error: true
       - name: After script - resulting systemd config
         run: |
-          find /etc/systemd/system/falco.service.d/ -type f -exec cat {} \;
+          cat /lib/systemd/system/falco.service
         if: ${{ always() }}
         continue-on-error: true
