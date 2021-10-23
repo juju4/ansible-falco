@@ -11,25 +11,93 @@ TimeoutSec=30
 RestartSec=15s
 #Restart=always
 Restart=on-failure
-PrivateTmp=true
-NoNewPrivileges=yes
-PrivateTmp=true
+
+# PrivateNetwork= service needs access to host network
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+RestrictAddressFamilies=~AF_PACKET
+IPAccounting=yes
+IPAddressAllow=localhost link-local multicast 10.0.0.0/8 192.168.0.0/16
+# IPAddressDeny= service needs access to all IPs
+
 ProtectHome=read-only
 ProtectSystem=full
-ProtectKernelTunables=true
-RestrictRealtime=true
-#RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-RestrictAddressFamilies=~AF_PACKET
-SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @privileged
+{% if (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 21) or
+      (ansible_distribution == 'Debian' and ansible_distribution_release == 'NA')
+%}
+ProtectProc=ptraceable
+{% endif %}
+# ReadWritePaths=
+PrivateTmp=true
+
+# PrivateDevices=yes
+# DeviceAllow=/dev/falco0
+
+ProtectKernelTunables=yes
+# ProtectKernelModules=yes
+{% if (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 20) or
+      (ansible_os_family == 'RedHat' and ansible_distribution_major_version|int > 8) or
+      (ansible_distribution == 'Debian' and ansible_distribution_release == 'NA')
+%}
+ProtectKernelLogs=yes
+ProtectHostname=yes
+# ProtectClock=yes
+{% endif %}
+
+UMask=077
+
+{% if ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 20 %}
+# Preparation of eBPF accounting maps failed: Operation not permitted?
+# AmbientCapabilities=CAP_BPF CAP_PERFMON
+{% endif %}
+CapabilityBoundingSet=~CAP_SYS_ADMIN
+CapabilityBoundingSet=~CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_DAC_READ_SEARCH
+CapabilityBoundingSet=~CAP_SYS_RAWIO
+CapabilityBoundingSet=~CAP_SYS_TIME
+CapabilityBoundingSet=~CAP_SYS_PTRACE
+CapabilityBoundingSet=~CAP_DAC_* CAP_FOWNER CAP_IPC_OWNER
+CapabilityBoundingSet=~CAP_NET_ADMIN
+CapabilityBoundingSet=~CAP_KILL
+CapabilityBoundingSet=~CAP_MKNOD
+CapabilityBoundingSet=~CAP_NET_BIND_SERVICE CAP_NET_BROADCAST
+CapabilityBoundingSet=~CAP_SYS_NICE CAP_SYS_RESOURCE
+CapabilityBoundingSet=~CAP_SYS_BOOT
+CapabilityBoundingSet=~CAP_LINUX_IMMUTABLE
+CapabilityBoundingSet=~CAP_SYS_CHROOT
+CapabilityBoundingSet=~CAP_BLOCK_SUSPEND
+CapabilityBoundingSet=~CAP_LEASE
+CapabilityBoundingSet=~CAP_SYS_PACCT
+CapabilityBoundingSet=~CAP_SYS_TTY_CONFIG
+CapabilityBoundingSet=~CAP_SETUID CAP_SETGID CAP_SETPCAP
+CapabilityBoundingSet=~CAP_CHOWN CAP_FSETID CAP_SETFCAP
+CapabilityBoundingSet=~CAP_NET_RAW
+CapabilityBoundingSet=~CAP_IPC_LOCK
+CapabilityBoundingSet=~CAP_WAKE_ALARM
+# CapabilityBoundingSet=~CAP_SYS_MODULE
+
+NoNewPrivileges=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+LockPersonality=yes
 # FIXME!
 #   PANIC: unprotected error in call to Lua API (runtime code generation failed, restricted kernel?)
 #   ?https://www.freelists.org/post/luajit/luajit-crashes-with-grsec-kernel,1
 #MemoryDenyWriteExecute=true
-#PrivateMounts=true
+PrivateMounts=true
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
 
+{% if (ansible_os_family == 'RedHat' and ansible_distribution_major_version|int >= 8) or
+      (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int >= 20) or
+      (ansible_distribution == 'Debian' and ansible_distribution_release == 'NA')
+%}
+SystemCallFilter=@system-service @privileged @module
+{% endif %}
+SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @clock @raw-io @reboot @swap @resources
+SystemCallArchitectures=native
 {% if falco_cgroups_restriction_enable|bool %}
+
 CPUShares={{ falco_cgroups_cpushares | default('1024') }}
-CPUQuota={{ falco_cgroups_cpuquota | default('60%') }}
+CPUQuota={{ falco_cgroups_cpuquota | default('40%') }}
 MemoryLimit={{ falco_cgroups_memorylimit | default('1G') }}
 {% endif %}
 
