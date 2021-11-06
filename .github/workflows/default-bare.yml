@@ -79,3 +79,8 @@ jobs:
           cat /lib/systemd/system/falco.service
         if: ${{ always() }}
         continue-on-error: true
+      - name: After script - report
+        run: |
+          sudo -u syslog /usr/local/scripts/falco_report.sh
+        if: ${{ always() }}
+        continue-on-error: true
