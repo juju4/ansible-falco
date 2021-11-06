@@ -3,6 +3,19 @@
 export export PATH=/usr/bin:/bin
 umask 077
 
+# inline stdout redirection for sh
+# https://stackoverflow.com/questions/3173131/redirect-copy-of-stdout-to-log-file-from-within-bash-script-itself
+check_tee_output()
+{
+    # copy (append) stdout and stderr to log file if TEE is unset or true
+    if [ -z "${TEE}" ] || [ "${TEE}" = true ]; then
+	TEE=false "$0" 2>&1 | tee {{ falco_reporting_dest }}/falco-report-"$(date +%Y%m%d)" >/dev/null
+        exit $?
+    fi
+}
+
+check_tee_output
+
 date=$(date +%Y%m%d)
 f=/var/log/falco/falco.log
 echo
