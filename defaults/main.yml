@@ -1,7 +1,8 @@
 ---
 
 falco_dev: false
-falco_json_output: false
+# required for reporting using jq
+falco_json_output: true
 falco_log_stderr: true
 falco_log_stdout: true
 falco_syslog_output: true
