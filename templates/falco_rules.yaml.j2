@@ -1122,6 +1122,14 @@
 - macro: multipath_writing_conf
   condition: (proc.name = multipath and fd.name startswith /etc/multipath/)
 
+- macro: omsconfig_writing_conf
+  condition: >
+    (user.name=omsagent and fd.name startswith /etc/opt/omi/conf/omsconfig/)
+
+- macro: ms_dependencyagent_writing_conf
+  condition: >
+    (user.name=root and proc.name="microsoft-depen /opt/microsoft/dependency-agent/bin/microsoft-dependency-agent-manager" and fd.name startswith /etc/opt/microsoft/dependency-agent/config/)
+
 # Add conditions to this macro (probably in a separate file,
 # overwriting this macro) to allow for specific combinations of
 # programs writing below specific directories below
@@ -1243,6 +1251,8 @@
     and not mcafee_writing_cma_d
     and not avinetworks_supervisor_writing_ssh
     and not multipath_writing_conf
+    and not omsconfig_writing_conf
+    and not ms_dependencyagent_writing_conf
 
 - rule: Write below etc
   desc: an attempt to write to any file below /etc
@@ -1402,6 +1412,12 @@
     proc.args contains "exec " and
     proc.args contains "/usr/bin/mandb")
 
+- macro: run_ms_omsagent_read_sensitive_file
+  condition: >
+    (user.name=omsagent and proc.pname=dsc_host and fd.name=/etc/security/pwquality.conf) or
+    (user.name=omsagent and proc.name="python3 /opt/microsoft/omsconfig/Scripts/python3/client.py 7") or
+    (user.name=root and proc.pname=osqueryd and fd.name startswith /etc/sudoers)
+
 - rule: Read sensitive file untrusted
   desc: >
     an attempt to read any sensitive file (e.g. files containing user/password/authentication
@@ -1430,6 +1446,7 @@
     and not linux_bench_reading_etc_shadow
     and not user_known_read_sensitive_files_activities
     and not user_read_sensitive_file_containers
+    and not run_ms_omsagent_read_sensitive_file
   output: >
     Sensitive file opened for reading by non-trusted program (user=%user.name user_loginuid=%user.loginuid program=%proc.name
     command=%proc.cmdline file=%fd.name parent=%proc.pname gparent=%proc.aname[2] ggparent=%proc.aname[3] gggparent=%proc.aname[4] container_id=%container.id image=%container.image.repository)
