@@ -22,7 +22,7 @@
     state: present
 
 ## to ensure gcc available for dkms
-- include: gcc.yml
+- import_tasks: gcc.yml
 
 - name: apt | kernel headers install
   apt:

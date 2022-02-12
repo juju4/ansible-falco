@@ -15,8 +15,14 @@
         - reload systemd
         - restart falco
     - block:
-        - include: "immutable.yml target_dir=/lib/systemd/system state=pre"
-        - include: "immutable.yml target_dir=/lib/systemd/system/falco.service state=pre"
+        - import_tasks: immutable.yml
+          vars:
+            target_dir: /lib/systemd/system
+            state: pre
+        - import_tasks: immutable.yml
+          vars:
+            target_dir: /lib/systemd/system/falco.service
+            state: pre
         - name: install falco systemd configuration (immutable)
           template:
             src: "systemd-falco.service.j2"
@@ -26,8 +32,14 @@
           notify:
             - reload systemd
             - restart falco
-        - include: "immutable.yml target_dir=/lib/systemd/system state=post"
-        - include: "immutable.yml target_dir=/lib/systemd/system/falco.service state=post"
+        - import_tasks: immutable.yml
+          vars:
+            target_dir: /lib/systemd/system
+            state: post
+        - import_tasks: immutable.yml
+          vars:
+            target_dir: /lib/systemd/system/falco.service
+            state: post
       when: systemdconf is failed
     - block:
         - name: enable and start falco systemd services
@@ -56,12 +68,21 @@
       register: initd
       ignore_errors: true
     - block:
-        - include: "immutable.yml target_dir=/etc/init.d/ state=pre"
-        - include: "immutable.yml target_dir=/etc/init.d/falco state=pre"
+        - import_tasks: immutable.yml
+          vars:
+            target_dir: /etc/init.d/
+            state: pre
+        - import_tasks: immutable.yml
+          vars:
+            target_dir: /etc/init.d/falco
+            state: pre
         - name: Remove init.d script
           file:
             path: /etc/init.d/falco
             state: absent
-        - include: "immutable.yml target_dir=/etc/init.d state=post"
+        - import_tasks: immutable.yml
+          vars:
+            target_dir: /etc/init.d
+            state: post
       when: initd is failed
   when: ansible_service_mgr == 'systemd'

@@ -51,10 +51,10 @@
   register: rules
   with_items: "{{ falco_config_template_upload }}"
 
-- include: rsyslog.yml
-- include: logrotate.yml
+- import_tasks: rsyslog.yml
+- import_tasks: logrotate.yml
 
-- include: systemd.yml
+- import_tasks: systemd.yml
   when: falco_systemd_restriction_enable and ansible_service_mgr == 'systemd'
 
 - name: print ansible_virtualization_type when verbosity is 1
@@ -69,5 +69,5 @@
 ## note: for containers, it will not be possible to match kernel headers/devel
 ##    which means module compilation fails. only observed on centos7
 
-- include: reporting.yml
+- import_tasks: reporting.yml
   when: falco_reporting
