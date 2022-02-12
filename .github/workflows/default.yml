@@ -31,7 +31,7 @@ jobs:
             experimental: false
 
     env:
-      ANSIBLE_CALLBACK_WHITELIST: profile_tasks
+      ANSIBLE_CALLBACKS_ENABLED: profile_tasks
       MOLECULE_NO_LOG: "false"
 
     steps:

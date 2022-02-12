@@ -16,7 +16,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, ubuntu-18.04]
     env:
-      ANSIBLE_CALLBACK_WHITELIST: profile_tasks
+      ANSIBLE_CALLBACKS_ENABLED: profile_tasks
 
     steps:
       - uses: actions/checkout@v2
@@ -39,7 +39,7 @@ jobs:
           ansible --version
           cd $GITHUB_WORKSPACE/juju4.falco
           [ -f get-dependencies.sh ] && sh -x get-dependencies.sh
-          { echo '[defaults]'; echo 'callback_whitelist = profile_tasks, timer'; echo 'roles_path = ../'; echo 'ansible_python_interpreter: /usr/bin/python3'; } >> ansible.cfg
+          { echo '[defaults]'; echo 'callbacks_enabled = profile_tasks, timer'; echo 'roles_path = ../'; echo 'ansible_python_interpreter: /usr/bin/python3'; } >> ansible.cfg
       - name: Environment
         run: |
           pwd
