@@ -1,20 +1,20 @@
 ---
 
 - block:
-    - name: install falco systemd configuration
-      template:
-        src: "systemd-{{ item }}.service.j2"
-        dest: "/lib/systemd/system/{{ item }}.service"
-        mode: '0644'
-        backup: yes
-      with_items:
-        - falco
-      register: systemdconf
-      failed_when: false
-      notify:
-        - reload systemd
-        - restart falco
     - block:
+        - name: install falco systemd configuration
+          template:
+            src: "systemd-{{ item }}.service.j2"
+            dest: "/lib/systemd/system/{{ item }}.service"
+            mode: '0644'
+            backup: yes
+          with_items:
+            - falco
+          register: systemdconf
+          notify:
+            - reload systemd
+            - restart falco
+      rescue:
         - import_tasks: immutable.yml
           vars:
             target_dir: /lib/systemd/system
@@ -40,7 +40,6 @@
           vars:
             target_dir: /lib/systemd/system/falco.service
             state: post
-      when: systemdconf is failed
     - block:
         - name: enable and start falco systemd services
           service:
@@ -61,13 +60,13 @@
           with_items:
             - falco
       when: not falco_service_enabled
-    - name: Remove init.d script
-      file:
-        path: /etc/init.d/falco
-        state: absent
-      register: initd
-      failed_when: false
     - block:
+        - name: Remove init.d script
+          file:
+            path: /etc/init.d/falco
+            state: absent
+          register: initd
+      rescue:
         - import_tasks: immutable.yml
           vars:
             target_dir: /etc/init.d/
@@ -84,5 +83,4 @@
           vars:
             target_dir: /etc/init.d
             state: post
-      when: initd is failed
   when: ansible_service_mgr == 'systemd'
