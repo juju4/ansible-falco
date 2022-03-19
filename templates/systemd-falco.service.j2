@@ -82,7 +82,14 @@ LockPersonality=yes
 #   PANIC: unprotected error in call to Lua API (runtime code generation failed, restricted kernel?)
 #   ?https://www.freelists.org/post/luajit/luajit-crashes-with-grsec-kernel,1
 #MemoryDenyWriteExecute=true
+{% if (ansible_os_family == 'RedHat' and ansible_distribution_major_version|int >= 8) or
+      (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int >= 20) or
+      (ansible_distribution == 'Debian' and ansible_distribution_release == 'NA')
+%}
 PrivateMounts=true
+{% else %}
+# PrivateMounts=true
+{% endif %}
 RestrictRealtime=yes
 RestrictSUIDSGID=yes
 
