@@ -4,20 +4,20 @@
   hosts: molecule
   tasks:
   - name: Ensure /etc/falco/falco.yaml config file is present
-    stat:
+    ansible.builtin.stat:
       path: /etc/falco/falco.yaml
     register: cfg2
   - name: Validate config present
-    assert:
+    ansible.builtin.assert:
       that: cfg2.stat.exists and cfg2.stat.size != 0
 
   - name: Ensure process is running
-    command: pgrep -u root falco
+    ansible.builtin.command: pgrep -u root falco
     register: ps
     changed_when: false
     failed_when: false
   - name: Validate ps output
-    assert:
+    ansible.builtin.assert:
       that: ps.stdout
     when: >
       not (ansible_virtualization_type is defined and

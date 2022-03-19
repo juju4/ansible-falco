@@ -3,27 +3,27 @@
 ## requires target_dir, state=pre/post
 
 - name: Check if system configured with immutable handled - juju4.harden
-  stat:
+  ansible.builtin.stat:
     path: /etc/apt/apt.conf.d/99security
   register: imm
 
 - block:
     ## Ansible 2.3+ for get_attributes
     - name: check target_dir {{ target_dir }} attributes
-      # stat:
+      # ansible.builtin.stat:
       #   path: "{{ target_dir }}"
       #   get_attributes: yes
-      command: "lsattr -d '{{ target_dir }}'"
+      ansible.builtin.command: "lsattr -d '{{ target_dir }}'"
       register: dir
       changed_when: false
 
     - name: Remove immutable attribute
-      command: "chattr -i '{{ target_dir }}'"
+      ansible.builtin.command: "chattr -i '{{ target_dir }}'"
       when: dir.stdout.find('-i-') != -1
   when: state == 'pre' and imm.stat.exists
 
 - name: Reestablish immutable attribute
-  command: "chattr +i '{{ target_dir }}'"
+  ansible.builtin.command: "chattr +i '{{ target_dir }}'"
   # file:
   #   dest: "{{ target_dir }}"
   #   attributes: '----i-----I--e--'

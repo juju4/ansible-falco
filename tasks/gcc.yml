@@ -1,40 +1,40 @@
 ---
 
 - name: ensure gcc is present
-  package:
+  ansible.builtin.package:
     name: gcc
     state: present
   register: pkg_result
   until: pkg_result is success
 
 - name: check if gcc path exists
-  stat:
+  ansible.builtin.stat:
     path: /usr/bin/gcc
   register: gcc
 - name: check if gcc-5 path exists
-  stat:
+  ansible.builtin.stat:
     path: /usr/bin/gcc-5
   register: gcc5
 - name: check if gcc-4.8 path exists
-  stat:
+  ansible.builtin.stat:
     path: /usr/bin/gcc-4.8
   register: gcc4
 
 - name: print gcc variable if verbosity is 1
-  debug:
+  ansible.builtin.debug:
     var: gcc
     verbosity: 1
 # - debug: var=gcc5
 
 - name: Ubuntu xenial | update default config to gcc-5 for gcc
-  command: "update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60"
+  ansible.builtin.command: "update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60"
   when:
     - (not gcc.stat.exists or (gcc.stat.lnk_source is defined and gcc.stat.lnk_source == "/usr/bin/None"))
     - gcc5.stat.exists
     - ansible_os_family == 'Debian'
     - ansible_distribution_release == 'xenial'
 - name: Ubuntu trusty | update default config to gcc-4.8 for gcc
-  command: "update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60"
+  ansible.builtin.command: "update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60"
   when:
     - (not gcc.stat.exists or (gcc.stat.lnk_source is defined and gcc.stat.lnk_source == "/usr/bin/None"))
     - gcc4.stat.exists

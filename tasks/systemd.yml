@@ -3,7 +3,7 @@
 - block:
     - block:
         - name: install falco systemd configuration
-          template:
+          ansible.builtin.template:
             src: "systemd-{{ item }}.service.j2"
             dest: "/lib/systemd/system/{{ item }}.service"
             mode: '0644'
@@ -24,7 +24,7 @@
             target_dir: /lib/systemd/system/falco.service
             state: pre
         - name: install falco systemd configuration (immutable)
-          template:
+          ansible.builtin.template:
             src: "systemd-falco.service.j2"
             dest: "/lib/systemd/system/falco.service"
             mode: '0644'
@@ -42,7 +42,7 @@
             state: post
     - block:
         - name: enable and start falco systemd services
-          service:
+          ansible.builtin.service:
             name: "{{ item }}"
             enabled: yes
             state: 'started'
@@ -52,7 +52,7 @@
       when: falco_service_enabled
     - block:
         - name: disable and stop falco systemd service
-          service:
+          ansible.builtin.service:
             name: "{{ item }}"
             enabled: no
             state: 'stopped'
@@ -62,7 +62,7 @@
       when: not falco_service_enabled
     - block:
         - name: Remove init.d script
-          file:
+          ansible.builtin.file:
             path: /etc/init.d/falco
             state: absent
           register: initd
@@ -76,7 +76,7 @@
             target_dir: /etc/init.d/falco
             state: pre
         - name: Remove init.d script
-          file:
+          ansible.builtin.file:
             path: /etc/init.d/falco
             state: absent
         - import_tasks: immutable.yml
