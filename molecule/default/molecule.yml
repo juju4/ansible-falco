@@ -3,11 +3,6 @@ dependency:
   name: galaxy
 driver:
   name: docker
-lint: |
-  set -e
-  yamllint .
-  ansible-lint -x 204
-  flake8
 platforms:
   - name: instance
     image: ${MOLECULE_DISTRO:-ubuntu:20.04}
