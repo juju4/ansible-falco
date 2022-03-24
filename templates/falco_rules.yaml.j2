@@ -562,7 +562,7 @@
 
 # Qualys seems to run a variety of shell subprocesses, at various
 # levels. This checks at a few levels without the cost of a full
-# proc.aname, which traverses the full parent heirarchy.
+# proc.aname, which traverses the full parent hierarchy.
 - macro: run_by_qualys
   condition: >
     (proc.pname=qualys-cloud-ag or
@@ -2647,7 +2647,7 @@
   items: [hyperkube, kubelet, k3s-agent]
 
 # This macro should be overridden in user rules as needed. This is useful if a given application
-# should not be ignored alltogether with the user_known_chmod_applications list, but only in
+# should not be ignored altogether with the user_known_chmod_applications list, but only in
 # specific conditions.
 - macro: user_known_set_setuid_or_setgid_bit_conditions
   condition: (never_true)

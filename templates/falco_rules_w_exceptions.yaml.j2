@@ -569,7 +569,7 @@
   condition: user.name in (bin, daemon, games, lp, mail, nobody, sshd, sync, uucp, www-data)
 
 # These macros will be removed soon. Only keeping them to maintain
-# compatiblity with some widely used rules files.
+# compatibility with some widely used rules files.
 # Begin Deprecated
 - macro: parent_ansible_running_python
   condition: (proc.pname in (python, pypy, python3) and proc.pcmdline contains ansible)
@@ -707,7 +707,7 @@
 
 # Qualys seems to run a variety of shell subprocesses, at various
 # levels. This checks at a few levels without the cost of a full
-# proc.aname, which traverses the full parent heirarchy.
+# proc.aname, which traverses the full parent hierarchy.
 - macro: run_by_qualys
   condition: >
     (proc.pname=qualys-cloud-ag or
@@ -2737,7 +2737,7 @@
   items: [hyperkube, kubelet]
 
 # This macro should be overridden in user rules as needed. This is useful if a given application
-# should not be ignored alltogether with the user_known_chmod_applications list, but only in
+# should not be ignored altogether with the user_known_chmod_applications list, but only in
 # specific conditions.
 - macro: user_known_set_setuid_or_setgid_bit_conditions
   condition: (never_true)
