@@ -1,6 +1,6 @@
 {{ ansible_managed | comment }}
 #
-# Copyright (C) 2020 The Falco Authors.
+# Copyright (C) 2022 The Falco Authors.
 #
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,13 +30,13 @@
 #   condition: (syscall.type=read and evt.dir=> and fd.type in (file, directory))
 
 - macro: open_write
-  condition: (evt.type=open or evt.type=openat) and evt.is_open_write=true and fd.typechar='f' and fd.num>=0
+  condition: evt.type in (open,openat,openat2) and evt.is_open_write=true and fd.typechar='f' and fd.num>=0
 
 - macro: open_read
-  condition: (evt.type=open or evt.type=openat) and evt.is_open_read=true and fd.typechar='f' and fd.num>=0
+  condition: evt.type in (open,openat,openat2) and evt.is_open_read=true and fd.typechar='f' and fd.num>=0
 
 - macro: open_directory
-  condition: (evt.type=open or evt.type=openat) and evt.is_open_read=true and fd.typechar='d' and fd.num>=0
+  condition: evt.type in (open,openat,openat2) and evt.is_open_read=true and fd.typechar='d' and fd.num>=0
 
 - macro: never_true
   condition: (evt.num=0)
@@ -64,10 +64,13 @@
   condition: rename or remove
 
 - macro: spawned_process
-  condition: evt.type = execve and evt.dir=<
+  condition: evt.type in (execve, execveat) and evt.dir=<
 
 - macro: create_symlink
   condition: evt.type in (symlink, symlinkat) and evt.dir=<
+
+- macro: create_hardlink
+  condition: evt.type in (link, linkat) and evt.dir=<
 
 - macro: chmod
   condition: (evt.type in (chmod, fchmod, fchmodat) and evt.dir=<)
@@ -217,13 +220,13 @@
 - list: deb_binaries
   items: [dpkg, dpkg-preconfigu, dpkg-reconfigur, dpkg-divert, apt, apt-get, aptitude,
     frontend, preinst, add-apt-reposit, apt-auto-remova, apt-key,
-    apt-listchanges, unattended-upgr, apt-add-reposit, apt-config, apt-cache, apt.systemd.dai
+    apt-listchanges, unattended-upgr, apt-add-reposit, apt-cache, apt.systemd.dai
     ]
 
 # The truncated dpkg-preconfigu is intentional, process names are
-# truncated at the sysdig level.
+# truncated at the falcosecurity-libs level.
 - list: package_mgmt_binaries
-  items: [rpm_binaries, deb_binaries, update-alternat, gem, pip, pip3, sane-utils.post, alternatives, chef-client, apk, snapd]
+  items: [rpm_binaries, deb_binaries, update-alternat, gem, npm, pip, pip3, sane-utils.post, alternatives, chef-client, apk, snapd]
 
 - macro: package_mgmt_procs
   condition: proc.name in (package_mgmt_binaries)
@@ -441,6 +444,9 @@
 - list: shell_config_directories
   items: [/etc/zsh]
 
+- macro: user_known_shell_config_modifiers
+  condition: (never_true)
+
 - rule: Modify Shell Configuration File
   desc: Detect attempt to modify shell configuration files
   condition: >
@@ -450,6 +456,7 @@
      fd.directory in (shell_config_directories))
     and not proc.name in (shell_binaries)
     and not exe_running_docker_save
+    and not user_known_shell_config_modifiers
   output: >
     a shell configuration file has been modified (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline pcmdline=%proc.pcmdline file=%fd.name container_id=%container.id image=%container.image.repository)
   priority:
@@ -562,7 +569,7 @@
 
 # Qualys seems to run a variety of shell subprocesses, at various
 # levels. This checks at a few levels without the cost of a full
-# proc.aname, which traverses the full parent heirarchy.
+# proc.aname, which traverses the full parent hierarchy.
 - macro: run_by_qualys
   condition: >
     (proc.pname=qualys-cloud-ag or
@@ -772,6 +779,9 @@
 
 - macro: centrify_writing_krb
   condition: (proc.name in (adjoin,addns) and fd.name startswith /etc/krb5)
+
+- macro: sssd_writing_krb
+  condition: (proc.name=adcli and proc.aname[2]=sssd and fd.name startswith /etc/krb5)
 
 - macro: cockpit_writing_conf
   condition: >
@@ -1101,7 +1111,7 @@
   condition: (proc.name=oc and fd.name startswith /etc/origin/node)
 
 - macro: keepalived_writing_conf
-  condition: (proc.name=keepalived and fd.name=/etc/keepalived/keepalived.conf)
+  condition: (proc.name in (keepalived, kube-keepalived) and fd.name=/etc/keepalived/keepalived.conf)
 
 - macro: etcd_manager_updating_dns
   condition: (container and proc.name=etcd-manager and fd.name=/etc/hosts)
@@ -1224,6 +1234,7 @@
     and not nginx_writing_certs
     and not chef_client_writing_conf
     and not centrify_writing_krb
+    and not sssd_writing_krb
     and not cockpit_writing_conf
     and not ipsec_writing_conf
     and not httpd_writing_ssl_conf
@@ -1847,6 +1858,7 @@
     k8s.gcr.io/ip-masq-agent-amd64,
     k8s.gcr.io/kube-proxy,
     k8s.gcr.io/prometheus-to-sd,
+    public.ecr.aws/falcosecurity/falco,
     quay.io/calico/node,
     sysdig/sysdig,
     sematext_images
@@ -1875,7 +1887,7 @@
 - list: falco_sensitive_mount_images
   items: [
     docker.io/sysdig/sysdig, sysdig/sysdig,
-    docker.io/falcosecurity/falco, falcosecurity/falco,
+    docker.io/falcosecurity/falco, falcosecurity/falco, public.ecr.aws/falcosecurity/falco,
     gcr.io/google_containers/hyperkube,
     gcr.io/google_containers/kube-proxy, docker.io/calico/node,
     docker.io/rook/toolbox, docker.io/cloudnativelabs/kube-router, docker.io/consul,
@@ -1890,19 +1902,6 @@
               container.image.repository in (trusted_images) or
               container.image.repository in (falco_sensitive_mount_images) or
               container.image.repository startswith quay.io/sysdig/)
-
-# These container images are allowed to run with hostnetwork=true
-- list: falco_hostnetwork_images
-  items: [
-    gcr.io/google-containers/prometheus-to-sd,
-    gcr.io/projectcalico-org/typha,
-    gcr.io/projectcalico-org/node,
-    gke.gcr.io/gke-metadata-server,
-    gke.gcr.io/kube-proxy,
-    gke.gcr.io/netd-amd64,
-    k8s.gcr.io/ip-masq-agent-amd64
-    k8s.gcr.io/prometheus-to-sd,
-    ]
 
 # Add conditions to this macro (probably in a separate file,
 # overwriting this macro) to specify additional containers that are
@@ -1926,12 +1925,13 @@
 
 # For now, only considering a full mount of /etc as
 # sensitive. Ideally, this would also consider all subdirectories
-# below /etc as well, but the globbing mechanism used by sysdig
+# below /etc as well, but the globbing mechanism
 # doesn't allow exclusions of a full pattern, only single characters.
 - macro: sensitive_mount
   condition: (container.mount.dest[/proc*] != "N/A" or
               container.mount.dest[/var/run/docker.sock] != "N/A" or
               container.mount.dest[/var/run/crio/crio.sock] != "N/A" or
+              container.mount.dest[/run/containerd/containerd.sock] != "N/A" or
               container.mount.dest[/var/lib/kubelet] != "N/A" or
               container.mount.dest[/var/lib/kubelet/pki] != "N/A" or
               container.mount.dest[/] != "N/A" or
@@ -2218,7 +2218,7 @@
 #   output: "sshd sent error message to syslog (error=%evt.buffer)"
 #   priority: WARNING
 
-- macro: somebody_becoming_themself
+- macro: somebody_becoming_themselves
   condition: ((user.name=nobody and evt.arg.uid=nobody) or
               (user.name=www-data and evt.arg.uid=www-data) or
               (user.name=_apt and evt.arg.uid=_apt) or
@@ -2256,7 +2256,7 @@
     evt.type=setuid and evt.dir=>
     and (known_user_in_container or not container)
     and not (user.name=root or user.uid=0)
-    and not somebody_becoming_themself
+    and not somebody_becoming_themselves
     and not proc.name in (known_setuid_binaries, userexec_binaries, mail_binaries, docker_binaries,
                           nomachine_binaries)
     and not proc.name startswith "runc:"
@@ -2280,7 +2280,7 @@
     activity by any programs that can manage users, passwords, or permissions. sudo and su are excluded.
     Activity in containers is also excluded--some containers create custom users on top
     of a base linux distribution at startup.
-    Some innocuous commandlines that don't actually change anything are excluded.
+    Some innocuous command lines that don't actually change anything are excluded.
   condition: >
     spawned_process and proc.name in (user_mgmt_binaries) and
     not proc.name in (su, sudo, lastlog, nologin, unix_chkpwd) and not container and
@@ -2316,7 +2316,7 @@
   desc: creating any files below /dev other than known programs that manage devices. Some rootkits hide files in /dev.
   condition: >
     fd.directory = /dev and
-    (evt.type = creat or ((evt.type = open or evt.type = openat) and evt.arg.flags contains O_CREAT))
+    (evt.type = creat or (evt.type in (open,openat,openat2) and evt.arg.flags contains O_CREAT))
     and not proc.name in (dev_creation_binaries)
     and not fd.name in (allowed_dev_files)
     and not fd.name startswith /dev/tty
@@ -2330,7 +2330,7 @@
 # explicitly enumerate the container images that you want to allow
 # access to EC2 metadata. In this main falco rules file, there isn't
 # any way to know all the containers that should have access, so any
-# container is alllowed, by repeating the "container" macro. In the
+# container is allowed, by repeating the "container" macro. In the
 # overridden macro, the condition would look something like
 # (container.image.repository = vendor/container-1 or
 # container.image.repository = vendor/container-2 or ...)
@@ -2384,7 +2384,8 @@
      docker.io/sysdig/sysdig, docker.io/falcosecurity/falco,
      sysdig/sysdig, falcosecurity/falco,
      fluent/fluentd-kubernetes-daemonset, prom/prometheus,
-     ibm_cloud_containers)
+     ibm_cloud_containers,
+     public.ecr.aws/falcosecurity/falco)
      or (k8s.ns.name = "kube-system"))
 
 - macro: k8s_api_server
@@ -2592,15 +2593,15 @@
   condition: >
     (modify and (
       evt.arg.name contains "bash_history" or
-      evt.arg.name contains "zsh_history" or
+      evt.arg.name endswith "zsh_history" or
       evt.arg.name contains "fish_read_history" or
       evt.arg.name endswith "fish_history" or
       evt.arg.oldpath contains "bash_history" or
-      evt.arg.oldpath contains "zsh_history" or
+      evt.arg.oldpath endswith "zsh_history" or
       evt.arg.oldpath contains "fish_read_history" or
       evt.arg.oldpath endswith "fish_history" or
       evt.arg.path contains "bash_history" or
-      evt.arg.path contains "zsh_history" or
+      evt.arg.path endswith "zsh_history" or
       evt.arg.path contains "fish_read_history" or
       evt.arg.path endswith "fish_history"))
 
@@ -2608,7 +2609,7 @@
   condition: >
     (open_write and (
       fd.name contains "bash_history" or
-      fd.name contains "zsh_history" or
+      fd.name endswith "zsh_history" or
       fd.name contains "fish_read_history" or
       fd.name endswith "fish_history") and evt.arg.flags contains "O_TRUNC")
 
@@ -2647,7 +2648,7 @@
   items: [hyperkube, kubelet, k3s-agent]
 
 # This macro should be overridden in user rules as needed. This is useful if a given application
-# should not be ignored alltogether with the user_known_chmod_applications list, but only in
+# should not be ignored altogether with the user_known_chmod_applications list, but only in
 # specific conditions.
 - macro: user_known_set_setuid_or_setgid_bit_conditions
   condition: (never_true)
@@ -2726,8 +2727,18 @@
     create_symlink and
     (evt.arg.target in (sensitive_file_names) or evt.arg.target in (sensitive_directory_names))
   output: >
-    Symlinks created over senstivie files (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline target=%evt.arg.target linkpath=%evt.arg.linkpath parent_process=%proc.pname)
-  priority: NOTICE
+    Symlinks created over sensitive files (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline target=%evt.arg.target linkpath=%evt.arg.linkpath parent_process=%proc.pname)
+  priority: WARNING
+  tags: [file, mitre_exfiltration]
+
+- rule: Create Hardlink Over Sensitive Files
+  desc: Detect hardlink created over sensitive files
+  condition: >
+    create_hardlink and
+    (evt.arg.oldpath in (sensitive_file_names))
+  output: >
+    Hardlinks created over sensitive files (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline target=%evt.arg.oldpath linkpath=%evt.arg.newpath parent_process=%proc.pname)
+  priority: WARNING
   tags: [file, mitre_exfiltration]
 
 - list: miner_ports
@@ -2823,8 +2834,7 @@
   condition: (evt.type in (sendto, sendmsg) and evt.dir=< and (fd.net != "127.0.0.0/8" and not fd.snet in (rfc_1918_addresses)) and ((minerpool_http) or (minerpool_https) or (minerpool_other)))
 
 - macro: trusted_images_query_miner_domain_dns
-  condition: (container.image.repository in (docker.io/falcosecurity/falco, falcosecurity/falco))
-  append: false
+  condition: (container.image.repository in (docker.io/falcosecurity/falco, falcosecurity/falco, public.ecr.aws/falcosecurity/falco))
 
 # The rule is disabled by default.
 # Note: falco will send DNS request to resolve miner pool domain which may trigger alerts in your environment.
@@ -2832,13 +2842,13 @@
   desc: Miners typically connect to miner pools on common ports.
   condition: net_miner_pool and not trusted_images_query_miner_domain_dns
   enabled: false
-  output: Outbound connection to IP/Port flagged by cryptoioc.ch (command=%proc.cmdline port=%fd.rport ip=%fd.rip container=%container.info image=%container.image.repository)
+  output: Outbound connection to IP/Port flagged by https://cryptoioc.ch (command=%proc.cmdline port=%fd.rport ip=%fd.rip container=%container.info image=%container.image.repository)
   priority: CRITICAL
   tags: [network, mitre_execution]
 
 - rule: Detect crypto miners using the Stratum protocol
   desc: Miners typically specify the mining pool to connect to with a URI that begins with 'stratum+tcp'
-  condition: spawned_process and proc.cmdline contains "stratum+tcp"
+  condition: spawned_process and (proc.cmdline contains "stratum+tcp" or proc.cmdline contains "stratum2+tcp" or proc.cmdline contains "stratum+ssl" or proc.cmdline contains "stratum2+ssl")
   output: Possible miner running (command=%proc.cmdline container=%container.info image=%container.image.repository)
   priority: CRITICAL
   tags: [process, mitre_execution]
@@ -2974,7 +2984,7 @@
 
 # The two Container Drift rules below will fire when a new executable is created in a container.
 # There are two ways to create executables - file is created with execution permissions or permissions change of existing file.
-# We will use a new sysdig filter, is_open_exec, to find all files creations with execution permission, and will trace all chmods in a container.
+# We will use a new filter, is_open_exec, to find all files creations with execution permission, and will trace all chmods in a container.
 # The use case we are targeting here is an attempt to execute code that was not shipped as part of a container (drift) -
 # an activity that might be malicious or non-compliant.
 # Two things to pay attention to:
@@ -3007,7 +3017,7 @@
 - rule: Container Drift Detected (open+create)
   desc: New executable created in a container due to open+create
   condition: >
-    evt.type in (open,openat,creat) and
+    evt.type in (open,openat,openat2,creat) and
     evt.is_open_exec=true and
     container and
     not runc_writing_exec_fifo and
@@ -3057,7 +3067,7 @@
 # A privilege escalation to root through heap-based buffer overflow
 - rule: Sudo Potential Privilege Escalation
   desc: Privilege escalation vulnerability affecting sudo (<= 1.9.5p2). Executing sudo using sudoedit -s or sudoedit -i command with command-line argument that ends with a single backslash character from an unprivileged user it's possible to elevate the user privileges to root.
-  condition: spawned_process and user.uid != 0 and proc.name=sudoedit and (proc.args contains -s or proc.args contains -i) and (proc.args contains "\ " or proc.args endswith \)
+  condition: spawned_process and user.uid != 0 and (proc.name=sudoedit or proc.name = sudo) and (proc.args contains -s or proc.args contains -i or proc.args contains --login) and (proc.args contains "\ " or proc.args endswith \)
   output: "Detect Sudo Privilege Escalation Exploit (CVE-2021-3156) (user=%user.name parent=%proc.pname cmdline=%proc.cmdline %container.info)"
   priority: CRITICAL
   tags: [filesystem, mitre_privilege_escalation]
@@ -3075,13 +3085,17 @@
 - macro: mount_info
   condition: (proc.args="" or proc.args intersects ("-V", "-l", "-h"))
 
+- macro: user_known_mount_in_privileged_containers
+  condition: (never_true)
+
 - rule: Mount Launched in Privileged Container
-  desc: Detect file system mount happened inside a privilegd container which might lead to container escape.
+  desc: Detect file system mount happened inside a privileged container which might lead to container escape.
   condition: >
     spawned_process and container
     and container.privileged=true
     and proc.name=mount
     and not mount_info
+    and not user_known_mount_in_privileged_containers
   output: Mount was executed inside a privileged container (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline %container.info image=%container.image.repository:%container.image.tag)
   priority: WARNING
   tags: [container, cis, mitre_lateral_movement]
@@ -3103,6 +3117,51 @@
   output: An userfaultfd syscall was successfully executed by an unprivileged user (user=%user.name user_loginuid=%user.loginuid process=%proc.name command=%proc.cmdline %container.info image=%container.image.repository:%container.image.tag)
   priority: CRITICAL
   tags: [syscall, mitre_defense_evasion]
+
+- list: ingress_remote_file_copy_binaries
+  items: [wget]
+
+- macro: ingress_remote_file_copy_procs
+  condition: (proc.name in (ingress_remote_file_copy_binaries))
+
+# Users should overwrite this macro to specify conditions under which a
+# Custom condition for use of ingress remote file copy tool in container
+- macro: user_known_ingress_remote_file_copy_activities
+  condition: (never_true)
+
+-  macro: curl_download
+   condition: proc.name = curl and
+              (proc.cmdline contains " > " or
+              proc.cmdline contains " >> " or
+              proc.cmdline contains " | " or
+              proc.cmdline contains " -o " or
+              proc.cmdline contains " --output " or
+              proc.cmdline contains " -O " or
+              proc.cmdline contains " --remote-name ")
+
+- rule: Launch Ingress Remote File Copy Tools in Container
+  desc: Detect ingress remote file copy tools launched in container
+  condition: >
+    spawned_process and
+    container and
+    (ingress_remote_file_copy_procs or curl_download) and
+    not user_known_ingress_remote_file_copy_activities
+  output: >
+    Ingress remote file copy tool launched in container (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline parent_process=%proc.pname
+    container_id=%container.id container_name=%container.name image=%container.image.repository:%container.image.tag)
+  priority: NOTICE
+  tags: [network, process, mitre_command_and_control]
+
+# This rule helps detect CVE-2021-4034:
+# A privilege escalation to root through memory corruption
+- rule: Polkit Local Privilege Escalation Vulnerability (CVE-2021-4034)
+  desc: "This rule detects an attempt to exploit a privilege escalation vulnerability in Polkit's pkexec. By running specially crafted code, a local user can leverage this flaw to gain root privileges on a compromised system"
+  condition:
+    spawned_process and user.uid != 0 and proc.name=pkexec and proc.args = ''
+  output:
+    "Detect Polkit pkexec Local Privilege Escalation Exploit (CVE-2021-4034) (user=%user.loginname uid=%user.loginuid command=%proc.cmdline args=%proc.args)"
+  priority: CRITICAL
+  tags: [process, mitre_privilege_escalation]
 
 # Application rules have moved to application_rules.yaml. Please look
 # there if you want to enable them by adding to
