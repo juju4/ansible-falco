@@ -7,7 +7,8 @@
     path: /etc/apt/apt.conf.d/99security
   register: imm
 
-- block:
+- name: pre
+  block:
     ## Ansible 2.3+ for get_attributes
     - name: check target_dir {{ target_dir }} attributes
       # ansible.builtin.stat:

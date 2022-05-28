@@ -1,7 +1,9 @@
 ---
 
-- block:
-    - block:
+- name: Systemd
+  block:
+    - name: Install unit
+      block:
         - name: install falco systemd configuration
           ansible.builtin.template:
             src: "systemd-{{ item }}.service.j2"
@@ -40,7 +42,8 @@
           vars:
             target_dir: /lib/systemd/system/falco.service
             state: post
-    - block:
+    - name: Service state
+      block:
         - name: enable and start falco systemd services
           ansible.builtin.service:
             name: "{{ item }}"
@@ -50,7 +53,8 @@
           with_items:
             - falco
       when: falco_service_enabled
-    - block:
+    - name: No Service
+      block:
         - name: disable and stop falco systemd service
           ansible.builtin.service:
             name: "{{ item }}"
@@ -60,7 +64,8 @@
           with_items:
             - falco
       when: not falco_service_enabled
-    - block:
+    - name: Ensure no init.d script
+      block:
         - name: Remove init.d script
           ansible.builtin.file:
             path: /etc/init.d/falco

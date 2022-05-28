@@ -1,5 +1,3 @@
 ---
 warn_list:
-  - syntax-check  # Ansible syntax check failed
-skip_list:
-  - '106'  # Role name {} does not match ``^[a-z][a-z0-9_]+$`` pattern'
+  - schema
