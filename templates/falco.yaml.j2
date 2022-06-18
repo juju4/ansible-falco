@@ -54,7 +54,7 @@ plugins:
     library_path: libcloudtrail.so
     init_config: ""
     open_params: ""
-{% if falco_json_output | bool }}
+{% if falco_json_output | bool %}
   - name: json
     library_path: libjson.so
     init_config: ""
@@ -65,7 +65,7 @@ plugins:
 # set a meaningful init_config/open_params for the cloudtrail plugin
 # and then change this to:
 # load_plugins: [cloudtrail, json]
-{% if falco_json_output | bool }}
+{% if falco_json_output | bool %}
 load_plugins: [json]
 {% else %}
 load_plugins: []
