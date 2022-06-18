@@ -571,7 +571,7 @@
   condition: user.name in (bin, daemon, games, lp, mail, nobody, sshd, sync, uucp, www-data)
 
 # These macros will be removed soon. Only keeping them to maintain
-# compatiblity with some widely used rules files.
+# compatibility with some widely used rules files.
 # Begin Deprecated
 - macro: parent_ansible_running_python
   condition: (proc.pname in (python, pypy, python3) and proc.pcmdline contains ansible)
