@@ -23,3 +23,8 @@ repos:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
         # exclude: .*/tests/.*
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.1.0
+    hooks:
+      - id: codespell
+        args: [-I, .codespellignore]
