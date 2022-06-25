@@ -76,6 +76,14 @@ jobs:
           systemctl status falco || true
         if: ${{ always() }}
         continue-on-error: true
+      - name: After script - etc
+        run: |
+          set -x
+          sudo cat /etc/falco/falco.yaml
+          sudo cat /etc/falco/falco_rules.yaml
+          sudo cat /etc/falco/falco_rules.local.yaml
+        if: ${{ always() }}
+        continue-on-error: true
       - name: After script - falco
         run: |
           sudo tail -200 /var/log/falco/falco.log || true
