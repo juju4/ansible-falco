@@ -19,8 +19,9 @@ falco_slack_output_webhook: 'https://hooks.slack.com/services/XXX'
 falco_rules_files:
   - /etc/falco/falco_rules.yaml
   - /etc/falco/falco_rules.local.yaml
-  - /etc/falco/k8s_audit_rules.yaml
   - /etc/falco/rules.d
+  # requires json and k8s_audit plugin
+  # - /etc/falco/k8s_audit_rules.yaml
 falco_config_template_upload:
   - { s: falco_rules_w_exceptions.yaml, d: falco_rules.yaml }
   - { s: falco_rules.local.yaml, d: falco_rules.local.yaml }
