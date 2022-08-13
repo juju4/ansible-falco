@@ -43,33 +43,19 @@ rules_file:
 # init_config/open_params for the cloudtrail plugin, see the README at
 # https://github.com/falcosecurity/plugins/blob/master/plugins/cloudtrail/README.md.
 plugins:
-  - name: k8saudit
-    library_path: libk8saudit.so
-    init_config:
-      ""
-      # maxEventBytes: 1048576
-      # sslCertificate: /etc/falco/falco.pem
-    open_params: "http://:9765/k8s-audit"
-  - name: cloudtrail
-    library_path: libcloudtrail.so
-    init_config: ""
-    open_params: ""
-{% if falco_json_output | bool %}
-  - name: json
-    library_path: libjson.so
-    init_config: ""
-{% endif %}
+{% for p in falco_plugins %}
+  - name: {{ p.name }}
+    library_path: {{ p.lib_path }}
+    init_config: "{{ p.init_config }}"
+    open_params: "{{ p.open_params }}"
+{% endfor %}
 
 # Setting this list to empty ensures that the above plugins are *not*
 # loaded and enabled by default. If you want to use the above plugins,
 # set a meaningful init_config/open_params for the cloudtrail plugin
 # and then change this to:
 # load_plugins: [cloudtrail, json]
-{% if falco_json_output | bool %}
-load_plugins: [json]
-{% else %}
-load_plugins: []
-{% endif %}
+load_plugins: {{ falco_load_plugins }}
 
 # Watch config file and rules files for modification.
 # When a file is modified, Falco will propagate new config,

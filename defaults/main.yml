@@ -15,6 +15,8 @@ falco_program_output_email: 'someone@example.com'
 # falco_slack_output can't be combined with falco_program_output
 falco_slack_output: false
 falco_slack_output_webhook: 'https://hooks.slack.com/services/XXX'
+falco_plugins: []
+falco_load_plugins: []
 
 falco_rules_files:
   - /etc/falco/falco_rules.yaml
