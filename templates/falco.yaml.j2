@@ -45,7 +45,7 @@ rules_file:
 plugins:
 {% for p in falco_plugins %}
   - name: {{ p.name }}
-    library_path: {{ p.lib_path }}
+    library_path: {{ p.library_path }}
     init_config: "{{ p.init_config }}"
     open_params: "{{ p.open_params }}"
 {% endfor %}
