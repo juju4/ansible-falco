@@ -16,19 +16,19 @@
 - import_tasks: redhat.yml
   when: ansible_os_family == "RedHat"
 
-- name: check falco config directory permissions
+- name: Check falco config directory permissions
   ansible.builtin.file:
     dest: /etc/falco
     state: directory
     mode: '0700'
 
-- name: get falco version
+- name: Get falco version
   ansible.builtin.shell: "falco --version | grep Falco | cut -d ' ' -f 3"
   register: falco_version
   changed_when: false
   ignore_errors: true
 
-- name: configure falco
+- name: Configure falco
   ansible.builtin.template:
     src: falco.yaml.j2
     dest: /etc/falco/falco.yaml
@@ -38,7 +38,7 @@
   notify:
     - restart falco
 
-- name: configure falco rules
+- name: Configure falco rules
   ansible.builtin.template:
     src: "{{ item.s }}.j2"
     dest: "/etc/falco/{{ item.d }}"
@@ -46,8 +46,8 @@
     backup: yes
     validate: 'falco -V %s'
   notify:
-    - falco global check
-    - restart falco
+    - Falco global check
+    - Restart falco
   register: rules
   with_items: "{{ falco_config_template_upload }}"
 
@@ -57,10 +57,10 @@
 - import_tasks: systemd.yml
   when: falco_systemd_restriction_enable and ansible_service_mgr == 'systemd'
 
-- name: print ansible_virtualization_type when verbosity is 1
+- name: Print ansible_virtualization_type when verbosity is 1
   ansible.builtin.debug: var=ansible_virtualization_type verbosity=1
 
-- name: ensure service falco enabled and started - not in containers
+- name: Ensure service falco enabled and started - not in containers
   ansible.builtin.service: name=falco enabled=yes state=started
   when: >
     not (ansible_virtualization_type is defined and

@@ -1,6 +1,6 @@
 ---
 
-- name: reload systemd
+- name: Reload systemd
   ansible.builtin.systemd:
     daemon_reload: yes
   when: >
@@ -8,20 +8,20 @@
           (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "containerd")
         )
 
-- name: restart falco
+- name: Restart falco
   ansible.builtin.service: name=falco state=restarted
   when: >
     not (ansible_virtualization_type is defined and
           (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "containerd")
         )
 
-- name: restart rsyslog
+- name: Restart rsyslog
   ansible.builtin.service: name=rsyslog state=restarted
   when: >
     not (ansible_virtualization_type is defined and
           (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "containerd")
         )
 
-- name: falco global check
+- name: Falco global check
   ansible.builtin.command: "falco -v -L"
   changed_when: false

@@ -11,7 +11,7 @@
   ansible.builtin.package_facts:
     manager: auto
 
-- name: get rsyslog version
+- name: Get rsyslog version
   ansible.builtin.set_fact:
     rsyslog_v: "{{ ansible_facts.packages['rsyslog'][0]['version'] }}"
 
@@ -45,11 +45,11 @@
     - "'/var/log/' in falco_syslog_target"
     - not falcolog.stat.exists
 
-- name: setup rsyslog to send falco logs to a specific target
+- name: Setup rsyslog to send falco logs to a specific target
   ansible.builtin.template:
     src: rsyslog-falco.conf.j2
     dest: /etc/rsyslog.d/30-falco.conf
     mode: '0644'
     backup: yes
   notify:
-    - restart rsyslog
+    - Restart rsyslog

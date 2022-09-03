@@ -4,7 +4,7 @@
   block:
     - name: Install unit
       block:
-        - name: install falco systemd configuration
+        - name: Install falco systemd configuration
           ansible.builtin.template:
             src: "systemd-{{ item }}.service.j2"
             dest: "/lib/systemd/system/{{ item }}.service"
@@ -14,8 +14,8 @@
             - falco
           register: systemdconf
           notify:
-            - reload systemd
-            - restart falco
+            - Reload systemd
+            - Restart falco
       rescue:
         - import_tasks: immutable.yml
           vars:
@@ -25,15 +25,15 @@
           vars:
             target_dir: /lib/systemd/system/falco.service
             state: pre
-        - name: install falco systemd configuration (immutable)
+        - name: Install falco systemd configuration (immutable)
           ansible.builtin.template:
             src: "systemd-falco.service.j2"
             dest: "/lib/systemd/system/falco.service"
             mode: '0644'
             backup: yes
           notify:
-            - reload systemd
-            - restart falco
+            - Reload systemd
+            - Restart falco
         - import_tasks: immutable.yml
           vars:
             target_dir: /lib/systemd/system
@@ -44,7 +44,7 @@
             state: post
     - name: Service state
       block:
-        - name: enable and start falco systemd services
+        - name: Enable and start falco systemd services
           ansible.builtin.service:
             name: "{{ item }}"
             enabled: yes
@@ -55,7 +55,7 @@
       when: falco_service_enabled
     - name: No Service
       block:
-        - name: disable and stop falco systemd service
+        - name: Disable and stop falco systemd service
           ansible.builtin.service:
             name: "{{ item }}"
             enabled: no
