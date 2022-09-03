@@ -16,10 +16,9 @@ galaxy_info:
         - all
     - name: Ubuntu
       versions:
-        - trusty
-        - xenial
         - bionic
         - focal
+        - jammy
     - name: Debian
       versions:
         - 8

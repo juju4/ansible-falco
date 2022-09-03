@@ -21,9 +21,6 @@
     mode: 0444
     state: present
 
-## to ensure gcc available for dkms
-- import_tasks: gcc.yml
-
 - name: apt | kernel headers install
   ansible.builtin.apt:
     name: "linux-headers-{{ ansible_kernel }}"
