@@ -21,12 +21,10 @@ galaxy_info:
         - jammy
     - name: Debian
       versions:
-        - 8
-        - 9
-        - 10
+        - all
   galaxy_tags:
     - system
     - security
     - logging
 dependencies:
-  - juju4.redhat_epel
+  - role: juju4.redhat_epel

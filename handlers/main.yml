@@ -9,14 +9,18 @@
         )
 
 - name: Restart falco
-  ansible.builtin.service: name=falco state=restarted
+  ansible.builtin.service:
+    name: falco
+    state: restarted
   when: >
     not (ansible_virtualization_type is defined and
           (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "containerd")
         )
 
 - name: Restart rsyslog
-  ansible.builtin.service: name=rsyslog state=restarted
+  ansible.builtin.service:
+    name: rsyslog
+    state: restarted
   when: >
     not (ansible_virtualization_type is defined and
           (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "containerd")
