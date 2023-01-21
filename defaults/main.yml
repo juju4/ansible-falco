@@ -1,5 +1,6 @@
 ---
 
+falco_repo_key: https://falco.org/repo/falcosecurity-packages.asc
 falco_dev: false
 # required for reporting using jq
 falco_json_output: true

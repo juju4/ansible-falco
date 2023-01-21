@@ -7,7 +7,7 @@
 
 - name: Add falcosecurity key
   ansible.builtin.apt_key:
-    url: https://falco.org/repo/falcosecurity-3672BA8F.asc
+    url: "{{ falco_repo_key }}"
     state: present
   register: pkg_result
   until: pkg_result is success
@@ -16,7 +16,7 @@
   vars:
     pkg_name: "{{ 'deb-dev' if (falco_dev) else 'deb' }}"
   ansible.builtin.apt_repository:
-    repo: "deb https://download.falco.org/packages/{{ pkg_name }} stable main"
+    repo: "deb [signed-by={{ falco_repo_key }}] https://download.falco.org/packages/{{ pkg_name }} stable main"
     filename: falcosecurity
     mode: 0444
     state: present
