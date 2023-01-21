@@ -3,7 +3,7 @@
 - name: Redhat | install falcosecurity repository key
   ansible.builtin.rpm_key:
     state: present
-    key: https://falco.org/repo/falcosecurity-3672BA8F.asc
+    key: "{{ falco_repo_key }}"
     validate_certs: "{{ falco_rpm_validate_certs | default('yes') }}"
   register: pkg_result
   until: pkg_result is success
