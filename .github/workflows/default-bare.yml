@@ -20,8 +20,6 @@ jobs:
             experimental: true
           - os: ubuntu-20.04
             experimental: false
-          - os: ubuntu-18.04
-            experimental: false
     env:
       ANSIBLE_CALLBACKS_ENABLED: profile_tasks
 
