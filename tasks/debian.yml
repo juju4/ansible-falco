@@ -1,6 +1,6 @@
 ---
 
-- name: Debian | ensure apt-transport-https and gpg are present
+- name: Debian | Ensure apt-transport-https and gpg are present
   ansible.builtin.apt:
     name: [apt-transport-https, gpg]
     state: present
@@ -22,7 +22,7 @@
     mode: 0444
     state: present
 
-- name: Debian | kernel headers install
+- name: Debian | Install kernel headers
   ansible.builtin.apt:
     name: "linux-headers-{{ ansible_kernel }}"
     state: present
@@ -30,7 +30,7 @@
   register: pkg_result
   until: pkg_result is success
 
-- name: Debian | falco install
+- name: Debian | Install falco
   ansible.builtin.apt:
     name: "{{ falco_pkgs }}"
     state: present

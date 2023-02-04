@@ -15,7 +15,7 @@
   ansible.builtin.set_fact:
     rsyslog_v: "{{ ansible_facts.packages['rsyslog'][0]['version'] }}"
 
-- name: Debug | rsyslog version
+- name: Debug | Get rsyslog version
   ansible.builtin.debug:
     var: rsyslog_v
     verbosity: 1

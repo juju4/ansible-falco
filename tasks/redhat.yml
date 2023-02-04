@@ -1,6 +1,6 @@
 ---
 
-- name: Redhat | install falcosecurity repository key
+- name: Redhat | Install falcosecurity repository key
   ansible.builtin.rpm_key:
     state: present
     key: "{{ falco_repo_key }}"
@@ -8,7 +8,7 @@
   register: pkg_result
   until: pkg_result is success
 
-- name: Redhat | install falcosecurity repository
+- name: Redhat | Install falcosecurity repository
   vars:
     repo_name: "{{ 'falcosecurity-rpm-dev.repo' if (falco_dev) else 'falcosecurity-rpm.repo' }}"
   ansible.builtin.get_url:
@@ -17,7 +17,7 @@
     mode: 0644
     validate_certs: "{{ falco_rpm_validate_certs | default('yes') }}"
 
-- name: Redhat | kernel-devel install
+- name: Redhat | Install kernel-devel
   ansible.builtin.yum:
     name: "kernel-devel-{{ ansible_kernel }}"
     state: present
@@ -26,7 +26,7 @@
   register: pkg_result
   until: pkg_result is success
 
-- name: Redhat | falco install
+- name: Redhat | Install falco
   ansible.builtin.yum:
     name: "{{ falco_pkgs }}"
     state: present
