@@ -1,0 +1,7 @@
+---
+
+falco_pkgs:
+  - dkms
+  - falco
+
+syslog_user: root
