@@ -4,11 +4,16 @@ name: default-bare
 on:
   push:
   pull_request:
+  workflow_dispatch:
   schedule:  # run weekly, every monday 03:00
     - cron: '0 3 * * 1'
 
+permissions: {}
+
 jobs:
   build:
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     strategy:
@@ -24,11 +29,11 @@ jobs:
       ANSIBLE_CALLBACKS_ENABLED: profile_tasks
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: juju4.falco
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.x'
       - name: Install dependencies
