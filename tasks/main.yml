@@ -26,7 +26,7 @@
 
 - name: Get falco version
   ansible.builtin.shell: >
-    falco --version | sed 's@.*Falco version: \(.*\) .*$@\1@;'
+    falco --version | awk '/Falco version:/ { print $3 }'
   register: falco_version
   changed_when: false
   ignore_errors: true
