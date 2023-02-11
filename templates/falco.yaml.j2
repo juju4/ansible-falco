@@ -285,7 +285,7 @@ grpc:
   enabled: {{ falco_grpc_unix_enabled | lower }}
   bind_address: "unix:///var/run/falco.sock"
   # when threadiness is 0, Falco automatically guesses it depending on the number of online cores
-{% if falco_version.stdout is version('0.24.0', '<') %}
+{% if falco_version.stdout | string and falco_version.stdout is version('0.24.0', '<') %}
   threadiness: 1
 {% else %}
   threadiness: 0
