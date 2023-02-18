@@ -17,7 +17,7 @@ falco_program_output_email: "someone@example.com"
 falco_slack_output: false
 falco_slack_output_webhook: 'https://hooks.slack.com/services/XXX'
 falco_http_output_enable: false
-falco_http_output_url: "http://some.url.examle.com"
+falco_http_output_url: "http://some.url.example.com"
 falco_plugins: []
 falco_load_plugins: []
 
