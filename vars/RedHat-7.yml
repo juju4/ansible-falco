@@ -5,3 +5,5 @@ falco_pkgs:
     - falco
 
 syslog_user: root
+
+falco_rpm_validate_certs: no

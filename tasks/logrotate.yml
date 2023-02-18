@@ -1,14 +1,14 @@
 ---
 
-- name: ensure logrotate package is present
-  package:
+- name: Ensure logrotate package is present
+  ansible.builtin.package:
     name: logrotate
     state: present
   register: pkg_result
   until: pkg_result is success
 
-- name: add logrotate configuration for falco log
-  template:
+- name: Add logrotate configuration for falco log
+  ansible.builtin.template:
     src: logrotate-falco.j2
     dest: /etc/logrotate.d/falco
     mode: '0644'

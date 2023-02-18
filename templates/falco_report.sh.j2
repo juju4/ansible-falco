@@ -1,0 +1,45 @@
+#!/bin/sh
+
+export export PATH=/usr/bin:/bin
+umask 077
+
+# inline stdout redirection for sh
+# https://stackoverflow.com/questions/3173131/redirect-copy-of-stdout-to-log-file-from-within-bash-script-itself
+check_tee_output()
+{
+    # copy (append) stdout and stderr to log file if TEE is unset or true
+    if [ -z "${TEE}" ] || [ "${TEE}" = true ]; then
+	TEE=false "$0" 2>&1 | tee {{ falco_reporting_dest }}/falco-report-"$(date +%Y%m%d)" >/dev/null
+        exit $?
+    fi
+}
+
+check_tee_output
+
+date=$(date +%Y%m%d)
+f=/var/log/falco/falco.log
+echo
+echo
+echo "      FALCO DAILY REPORT ${date} for ${f}"
+echo
+echo
+
+tmpf=$(mktemp)
+
+# remove syslog header
+awk '/{"output"/ {$1="";$2="";$3="";$4="";$5=""; gsub(/^     /, "", $0); print}' "${f}" > "${tmpf}"
+
+echo "** Rule matches"
+jq -r '.rule' "${tmpf}" | sort | uniq -c | sort -nr
+echo
+echo
+
+echo "** container.id"
+jq -r '.output_fields."container.id"' "${tmpf}" | sort | uniq -c |sort -nr
+echo "** username+cmdline+pcmdline"
+jq -r '.output_fields."user.name" + ";" + .output_fields."proc.cmdline" + ";" + .output_fields."proc.pcmdline"' "${tmpf}" | sort |uniq -c |sort -nr
+echo "** Write below"
+jq -r 'select(.rule | startswith("Write below ")) | .output_fields."user.name" + ";" + .output_fields."proc.cmdline" + ";"' "${tmpf}" | sort |uniq -c |sort -nr
+
+rm "${tmpf}"
+find {{ falco_reporting_dest }} -name 'falco-report-*' -mtime +{{ falco_reporting_purge | default('10') }} -exec rm {} \; 2>/dev/null

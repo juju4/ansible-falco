@@ -4,9 +4,13 @@
     rotate {{ falco_logrotate_days|int }}
     daily
     missingok
-    notifempty
     delaycompress
     compress
     create 640 {{ syslog_user }} adm
     sharedscripts
+{% if falco_reporting %}
+    prerotate
+        test ! -x /usr/local/scripts/{{ falco_reporting_template | basename }} || sudo -u syslog /usr/local/scripts/{{ falco_reporting_template | basename }} 2>&1 >/dev/null
+    endscript
+{% endif %}
 }

@@ -1,39 +1,37 @@
 ---
 
-- name: apt | ensure apt-transport-https is present
-  apt:
-    name: apt-transport-https
+- name: Debian | Ensure apt-transport-https and gpg are present
+  ansible.builtin.apt:
+    name: [apt-transport-https, gpg]
     state: present
 
-- name: add falcosecurity key
-  apt_key:
-    url: https://falco.org/repo/falcosecurity-3672BA8F.asc
+- name: Add falcosecurity key
+  ansible.builtin.apt_key:
+    url: "{{ falco_repo_key }}"
     state: present
   register: pkg_result
   until: pkg_result is success
 
-- name: install falcosecurity apt source
+- name: Install falcosecurity apt source
   vars:
-    pkg_name: "{{'deb-dev' if (falco_dev) else 'deb'}}"
-  apt_repository:
-    repo: "deb https://dl.bintray.com/falcosecurity/{{ pkg_name }} stable main"
+    pkg_name: "{{ 'deb-dev' if (falco_dev) else 'deb' }}"
+  ansible.builtin.apt_repository:
+    # repo: "deb [signed-by={{ falco_repo_key }}] https://download.falco.org/packages/{{ pkg_name }} stable main"
+    repo: "deb https://download.falco.org/packages/{{ pkg_name }} stable main"
     filename: falcosecurity
     mode: 0444
     state: present
 
-## to ensure gcc available for dkms
-- include: gcc.yml
-
-- name: apt | kernel headers install
-  apt:
+- name: Debian | Install kernel headers
+  ansible.builtin.apt:
     name: "linux-headers-{{ ansible_kernel }}"
     state: present
   ignore_errors: true
   register: pkg_result
   until: pkg_result is success
 
-- name: apt | falco install
-  apt:
+- name: Debian | Install falco
+  ansible.builtin.apt:
     name: "{{ falco_pkgs }}"
     state: present
     update_cache: yes

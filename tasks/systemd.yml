@@ -1,67 +1,98 @@
 ---
 
-- block:
-    - name: install falco systemd configuration
-      template:
-        src: "systemd-{{ item }}.service.j2"
-        dest: "/lib/systemd/system/{{ item }}.service"
-        mode: '0644'
-        backup: yes
-      with_items:
-        - falco
-      register: systemdconf
-      ignore_errors: true
-      notify:
-        - reload systemd
-        - restart falco
-    - block:
-        - include: "immutable.yml target_dir=/lib/systemd/system state=pre"
-        - include: "immutable.yml target_dir=/lib/systemd/system/falco.service state=pre"
-        - name: install falco systemd configuration (immutable)
-          template:
+- name: Systemd
+  when: ansible_service_mgr == 'systemd'
+  block:
+    - name: Install unit
+      block:
+        - name: Install falco systemd configuration
+          ansible.builtin.template:
+            src: "systemd-{{ item }}.service.j2"
+            dest: "/lib/systemd/system/{{ item }}.service"
+            mode: '0644'
+            backup: yes
+          with_items:
+            - falco
+          register: systemdconf
+          notify:
+            - Reload systemd
+            - Restart falco
+      rescue:
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: /lib/systemd/system
+            state: pre
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: /lib/systemd/system/falco.service
+            state: pre
+        - name: Install falco systemd configuration (immutable)
+          ansible.builtin.template:
             src: "systemd-falco.service.j2"
             dest: "/lib/systemd/system/falco.service"
             mode: '0644'
             backup: yes
           notify:
-            - reload systemd
-            - restart falco
-        - include: "immutable.yml target_dir=/lib/systemd/system state=post"
-        - include: "immutable.yml target_dir=/lib/systemd/system/falco.service state=post"
-      when: systemdconf is failed
-    - block:
-        - name: enable and start falco systemd services
-          service:
+            - Reload systemd
+            - Restart falco
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: /lib/systemd/system
+            state: post
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: /lib/systemd/system/falco.service
+            state: post
+    - name: Service state
+      when: falco_service_enabled
+      block:
+        - name: Enable and start falco systemd services
+          ansible.builtin.service:
             name: "{{ item }}"
             enabled: yes
             state: 'started'
-          ignore_errors: true
+          failed_when: false
           with_items:
             - falco
-      when: falco_service_enabled
-    - block:
-        - name: disable and stop falco systemd service
-          service:
+    - name: No Service
+      when: not falco_service_enabled
+      block:
+        - name: Disable and stop falco systemd service
+          ansible.builtin.service:
             name: "{{ item }}"
             enabled: no
             state: 'stopped'
-          ignore_errors: true
+          failed_when: false
           with_items:
             - falco
-      when: not falco_service_enabled
-    - name: Remove init.d script
-      file:
-        path: /etc/init.d/falco
-        state: absent
-      register: initd
-      ignore_errors: true
-    - block:
-        - include: "immutable.yml target_dir=/etc/init.d/ state=pre"
-        - include: "immutable.yml target_dir=/etc/init.d/falco state=pre"
+    - name: Ensure no init.d script
+      block:
         - name: Remove init.d script
-          file:
+          ansible.builtin.file:
             path: /etc/init.d/falco
             state: absent
-        - include: "immutable.yml target_dir=/etc/init.d state=post"
-      when: initd is failed
-  when: ansible_service_mgr == 'systemd'
+          register: initd
+      rescue:
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: /etc/init.d/
+            state: pre
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: /etc/init.d/falco
+            state: pre
+        - name: Remove init.d script
+          ansible.builtin.file:
+            path: /etc/init.d/falco
+            state: absent
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: /etc/init.d
+            state: post

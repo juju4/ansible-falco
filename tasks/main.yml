@@ -1,73 +1,85 @@
 ---
 
 - name: Include version-specific variables for Ubuntu.
-  include_vars: "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
   when: ansible_distribution == 'Ubuntu'
 - name: Include version-specific variables for Debian.
-  include_vars: "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
   when: ansible_distribution == 'Debian'
 - name: Include version-specific variables for RedHat
-  include_vars: "RedHat-{{ ansible_distribution_version.split('.')[0] }}.yml"
+  ansible.builtin.include_vars: "RedHat-{{ ansible_distribution_version.split('.')[0] }}.yml"
   when: ansible_os_family == "RedHat"
 
-- import_tasks: debian.yml
+- name: Import debian
+  ansible.builtin.import_tasks: debian.yml
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
-- import_tasks: redhat.yml
+- name: Import redhat
+  ansible.builtin.import_tasks: redhat.yml
   when: ansible_os_family == "RedHat"
 
-- name: check falco config directory permissions
-  file:
+- name: Check falco config directory permissions
+  ansible.builtin.file:
     dest: /etc/falco
     state: directory
     mode: '0700'
 
-- name: get falco version
-  shell: "falco --version | grep Falco | cut -d ' ' -f 3"
+- name: Get falco version
+  ansible.builtin.shell: >
+    falco --version | awk '/Falco version:/ { print $3 }'
   register: falco_version
   changed_when: false
   ignore_errors: true
 
-- name: configure falco
-  template:
+- name: Configure falco
+  ansible.builtin.template:
     src: falco.yaml.j2
     dest: /etc/falco/falco.yaml
     mode: '0600'
     backup: yes
     validate: 'falco -c %s -L'
   notify:
-    - restart falco
+    - Restart falco
 
-- name: configure falco rules
-  template:
+- name: Configure falco rules
+  ansible.builtin.template:
     src: "{{ item.s }}.j2"
     dest: "/etc/falco/{{ item.d }}"
     mode: '0600'
     backup: yes
     validate: 'falco -V %s'
   notify:
-    - falco global check
-    - restart falco
+    - Falco global check
+    - Restart falco
   register: rules
   with_items: "{{ falco_config_template_upload }}"
 
-- include: rsyslog.yml
-- include: logrotate.yml
+- name: Import rsyslog
+  ansible.builtin.import_tasks: rsyslog.yml
+- name: Import logrotate
+  ansible.builtin.import_tasks: logrotate.yml
 
-- include: cgroups.yml
-  when: falco_cgroups_restriction_enable and ansible_service_mgr == 'systemd'
-
-- include: systemd.yml
+- name: Import systemd
+  ansible.builtin.import_tasks: systemd.yml
   when: falco_systemd_restriction_enable and ansible_service_mgr == 'systemd'
 
-- name: print ansible_virtualization_type when verbosity is 1
-  debug: var=ansible_virtualization_type verbosity=1
+- name: Print ansible_virtualization_type when verbosity is 1
+  ansible.builtin.debug:
+    var: ansible_virtualization_type
+    verbosity: 1
 
-- name: ensure service falco enabled and started - not in containers
-  service: name=falco enabled=yes state=started
+- name: Ensure service falco enabled and started - not in containers
+  ansible.builtin.service:
+    name: falco
+    enabled: yes
+    state: started
   when: >
     not (ansible_virtualization_type is defined and
-          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker")
+          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "containerd")
         )
 ## note: for containers, it will not be possible to match kernel headers/devel
 ##    which means module compilation fails. only observed on centos7
+
+- name: Import reporting
+  ansible.builtin.import_tasks: reporting.yml
+  when: falco_reporting

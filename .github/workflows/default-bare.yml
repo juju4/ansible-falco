@@ -1,0 +1,104 @@
+---
+name: default-bare
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:  # run weekly, every monday 03:00
+    - cron: '0 3 * * 1'
+
+permissions: {}
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            experimental: true
+          - os: ubuntu-20.04
+            experimental: false
+    env:
+      ANSIBLE_CALLBACKS_ENABLED: profile_tasks
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: juju4.falco
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install ansible-lint flake8 yamllint
+          which ansible
+          pip3 install ansible
+          pip3 show ansible
+          ls -l $HOME/.local/bin || true
+          ls -l /opt/hostedtoolcache/Python/3.9.1/x64/bin || true
+          echo "/opt/hostedtoolcache/Python/3.9.1/x64/bin" >> $GITHUB_PATH
+          ansible --version
+          cd $GITHUB_WORKSPACE/juju4.falco
+          [ -f get-dependencies.sh ] && sh -x get-dependencies.sh
+          { echo '[defaults]'; echo 'callbacks_enabled = profile_tasks, timer'; echo 'roles_path = ../'; echo 'ansible_python_interpreter: /usr/bin/python3'; } >> ansible.cfg
+      - name: Environment
+        run: |
+          pwd
+          env
+          find -ls
+      - name: Before script - systemctl
+        run: |
+          systemd-analyze security || true
+          systemctl status --all --no-pager || true
+      - name: run test
+        run: |
+          cd $GITHUB_WORKSPACE/juju4.falco && ansible-playbook -i localhost, --connection=local --become -vvv molecule/default/converge.yml
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+      - name: idempotency run
+        run: |
+          cd $GITHUB_WORKSPACE/juju4.falco && ansible-playbook -i localhost, --connection=local --become -vvv molecule/default/converge.yml | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 1)
+      - name: On failure
+        run: |
+          systemctl -l --no-pager status
+        if: env.WORKFLOW_CONCLUSION == 'failure'  # notify only if failure
+      - name: After script - systemctl
+        run: |
+          systemd-analyze security || true
+          systemctl --failed || true
+          systemctl status falco || true
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - etc
+        run: |
+          set -x
+          sudo cat /etc/falco/falco.yaml
+          sudo cat /etc/falco/falco_rules.yaml
+          sudo cat /etc/falco/falco_rules.local.yaml
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - falco
+        run: |
+          sudo tail -200 /var/log/falco/falco.log || true
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - resulting systemd config
+        run: |
+          cat /lib/systemd/system/falco.service
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - report
+        run: |
+          sudo -u syslog /usr/local/scripts/falco_report.sh
+        if: ${{ always() }}
+        continue-on-error: true

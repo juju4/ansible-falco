@@ -11,6 +11,10 @@
 #   priority: ERROR
 #   tags: [users, container]
 
+# {"output":"00:00:00.670254745: Notice Namespace change (setns) by unexpected program (user=root user_loginuid=-1 command=snap-confine --base core18 snap.nextcloud.logrotate /usr/lib/snapd/snap-exec nextcloud.logrotate parent=snap-confine host (id=host) container_id=host image=<NA>:<NA>)","priority":"Notice","rule":"Change thread namespace","time":"2020-11-10T00:00:00.670254745Z", "output_fields": {"container.id":"host","container.image.repository":null,"container.image.tag":null,"container.name":"host","evt.time":1604966400670254745,"proc.cmdline":"snap-confine --base core18 snap.nextcloud.logrotate /usr/lib/snapd/snap-exec nextcloud.logrotate","proc.pname":"snap-confine","user.loginuid":-1,"user.name":"root"}
+- list: user_known_change_thread_namespace_binaries
+  items: ['snap-confine']
+
 # Or override/append to any rule, macro, or list from the Default Rules
 
 # user: root, arpwatch, snmp, dnsmasq
@@ -36,4 +40,79 @@
   condition: >
     (user.name=jenkins and proc.pname=java and proc.name=sh)
 
+# FIXME! not working
+- macro: user_known_non_sudo_setuid_conditions
+  condition: >
+    user.name=root or
+    (user.name=proxy and proc.pname=squid and proc.cmdline=pinger) or
+    (user.name=proxy and proc.pname=squid and proc.cmdline="squid --kid squid-1 -sYC") or
+    (user.name=proxy and proc.pname=squid and proc.cmdline="squid --kid squid-1 --foreground -sYC")
 
+- macro: user_known_change_thread_namespace_activities
+  condition: >
+    (user.name=root and proc.pname="snap-confine host (id=host)" and proc.cmdline="snap-confine snap.canonical-livepatch.canonical-livepatch /usr/lib/snapd/snap-exec canonical-livepatch status") or
+    (user.name=root and proc.pname="python3 host (id=host)" and proc.cmdline="snap-confine snap.canonical-livepatch.canonical-livepatch /usr/lib/snapd/snap-exec canonical-livepatch status --verbose") or
+    (user.name=root and proc.pname="ubuntu-advantag host (id=host)" and proc.cmdline="snap-confine snap.canonical-livepatch.canonical-livepatch /usr/lib/snapd/snap-exec canonical-livepatch status")
+
+# reproduce: $ lxc list
+- macro: user_known_write_root_conditions
+  condition: >
+    fd.name=/root/.bash_history or
+    (fd.name=/root/.config/lxc/cookies and proc.name=lxc) or
+    (fd.name=/root/.config/lxc/cookies.lock and proc.name=lxc)
+
+- macro: cmp_cp_by_passwd
+  condition: proc.name in (cmp, cp) and proc.pname in (passwd, run-parts)
+
+- macro: user_read_sensitive_file_conditions
+  condition: >
+    cmp_cp_by_passwd or
+    (user.name=root and proc.name=python3 and proc.cmdline contains "/.ansible/tmp/ansible-tmp-" and proc.pname=sh)
+# FIXME! validation fails for first, missing fields for second
+# 20200712 seems not necessary anymore:
+# 	not reproduced by
+# 	$ ansible -m setup opcentral
+# 	$ ansible --vault-password-file ~/.ansible/vault-201909 -m command -a 'touch /tmp/test' opcentral
+#    (user.name=root and proc.name=python3 and proc.cmdline contains "/.ansible/tmp/ansible-tmp-" and proc.pname=sh)
+#    (user.name=root and proc.name=python3 and proc.cmdline contains "/.ansible/tmp/ansible-tmp-" and proc.pname=sh and proc.gpname=sudo and proc.ggpname=sh and proc.gggpname=sshd)
+
+# logrotate with shred option
+- macro: user_known_remove_data_activities
+  condition: >
+    proc.cmdline="shred -u -" and (user.name="root" or user.name="syslog") and proc.pcmdline="logrotate /etc/logrotate.conf"
+
+- macro: allowed_clear_log_files
+  condition: >
+    user.name=root and proc.cmdline=dnscrypt-proxy and fd.name startswith "/var/log/dnscrypt-proxy2-"
+
+- macro: user_known_read_sensitive_files_activities
+  condition:
+    (user.name=root and proc.pname=osqueryd and proc.cmdline=SchedulerRunner)
+
+- macro: user_known_write_below_root_activities
+  condition: >
+    user.name=_zeek and
+    (proc.cmdline startswith "bash /opt/zeek/share/zeekctl/scripts/archive-log " or
+     proc.cmdline startswith "/opt/zeek/share/zeekctl/scripts/postprocessors/summarize-connections "
+    )
+
+- macro: wwwroot_dir
+  condition: fd.name startswith /var/www or fd.name startswith /usr/share/nginx/html
+
+- macro: open_write
+  condition: (evt.type=open or evt.type=openat) and evt.is_open_write=true and fd.typechar='f' and fd.num>=0
+
+- macro: proc_name_exists
+  condition: (proc.name!="<NA>")
+
+- macro: write_wwwroot_common
+  condition: >
+    wwwroot_dir and evt.dir = < and open_write
+    and proc_name_exists
+
+- rule: Write below Web root
+  desc: an attempt to write to any file below web root
+  condition: write_wwwroot_common
+  output: "File below web root opened for writing (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline parent=%proc.pname pcmdline=%proc.pcmdline file=%fd.name program=%proc.name gparent=%proc.aname[2] ggparent=%proc.aname[3] gggparent=%proc.aname[4] container_id=%container.id image=%container.image.repository)"
+  priority: ERROR
+  tags: [filesystem, mitre_persistence]

@@ -1,6 +1,9 @@
 ---
+
+falco_repo_key: "{% if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int <= 8 %}https://falco.org/repo/falcosecurity-3672BA8F.asc{% else %}https://falco.org/repo/falcosecurity-packages.asc{% endif %}"
 falco_dev: false
-falco_json_output: false
+# required for reporting using jq
+falco_json_output: true
 falco_log_stderr: true
 falco_log_stdout: true
 falco_syslog_output: true
@@ -12,15 +15,18 @@ falco_program_output_email: "someone@example.com"
 # falco_slack_output depends on falco_json_output
 # falco_slack_output can't be combined with falco_program_output
 falco_slack_output: false
-falco_slack_output_webhook: "https://hooks.slack.com/services/XXX"
+falco_slack_output_webhook: 'https://hooks.slack.com/services/XXX'
 falco_http_output_enable: false
 falco_http_output_url: "http://some.url.examle.com"
+falco_plugins: []
+falco_load_plugins: []
 
 falco_rules_files:
   - /etc/falco/falco_rules.yaml
   - /etc/falco/falco_rules.local.yaml
-  - /etc/falco/k8s_audit_rules.yaml
   - /etc/falco/rules.d
+  # requires json and k8s_audit plugin
+  # - /etc/falco/k8s_audit_rules.yaml
 falco_config_template_upload:
   - { s: falco_rules_w_exceptions.yaml, d: falco_rules.yaml }
   - { s: falco_rules.local.yaml, d: falco_rules.local.yaml }
@@ -34,10 +40,14 @@ falco_syslog_target: /var/log/falco/falco.log
 falco_logrotate_days: 90
 
 falco_cgroups_restriction_enable: true
-#falco_cgroups_cpuquota: '60%'
-#falco_cgroups_memorylimit: '1G'
-#falco_cgroups_cpushares: '1024'
+# falco_cgroups_cpuquota: '60%'
+# falco_cgroups_memorylimit: '1G'
+# falco_cgroups_cpushares: '1024'
 falco_systemd_restriction_enable: true
 # as systemd service
 falco_service_enabled: true
 falco_grpc_unix_enabled: false
+
+falco_reporting: true
+falco_reporting_template: falco_report.sh
+falco_reporting_dest: /var/tmp

@@ -1,5 +1,6 @@
-[![Build Status - Master](https://travis-ci.org/juju4/ansible-falco.svg?branch=master)](https://travis-ci.org/juju4/ansible-falco)
-[![Build Status - Devel](https://travis-ci.org/juju4/ansible-falco.svg?branch=devel)](https://travis-ci.org/juju4/ansible-falco/branches)
+[![Actions Status - Master](https://github.com/juju4/ansible-falco/workflows/AnsibleCI/badge.svg)](https://github.com/juju4/ansible-falco/actions?query=branch%3Amaster)
+[![Actions Status - Devel](https://github.com/juju4/ansible-falco/workflows/AnsibleCI/badge.svg?branch=devel)](https://github.com/juju4/ansible-falco/actions?query=branch%3Adevel)
+
 # Falco Behavioral activity monitor ansible role
 
 Ansible role to setup Falco
@@ -58,4 +59,3 @@ https://github.com/draios/sysdig/issues/152
 ## License
 
 BSD 2-clause
-
