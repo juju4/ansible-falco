@@ -19,7 +19,7 @@
 
 # Starting with version 8, the Falco engine supports exceptions.
 # However the Falco rules file does not use them by default.
-- required_engine_version: 13
+- required_engine_version: 17
 
 # Currently disabled as read/write are ignored syscalls. The nearly
 # similar open_write/open_read check for files being opened for
@@ -76,6 +76,11 @@
 - macro: modify
   condition: (rename or remove)
 
+# %evt.arg.flags available for evt.dir=>, but only for umount2
+# %evt.arg.name is path and available for evt.dir=<
+# - macro: umount
+#   condition: (evt.type in (umount, umount2))
+
 - macro: spawned_process
   condition: (evt.type in (execve, execveat) and evt.dir=<)
 
@@ -87,6 +92,9 @@
 
 - macro: chmod
   condition: (evt.type in (chmod, fchmod, fchmodat) and evt.dir=<)
+
+- macro: kernel_module_load
+  condition: (evt.type in (init_module, finit_module) and evt.dir=<)
 
 # File categories
 - macro: bin_dir
@@ -183,9 +191,6 @@
 - list: sysdigcloud_binaries
   items: [setup-backend, dragent, sdchecks]
 
-- list: docker_binaries
-  items: [docker, dockerd, exe, docker-compose, docker-entrypoi, docker-runc-cur, docker-current, dockerd-current]
-
 - list: k8s_binaries
   items: [hyperkube, skydns, kube2sky, exechealthz, weave-net, loopback, bridge, openshift-sdn, openshift]
 
@@ -220,7 +225,7 @@
 # The explicit quotes are needed to avoid the - characters being
 # interpreted by the filter expression.
 - list: rpm_binaries
-  items: [dnf, rpm, rpmkey, yum, '"75-system-updat"', rhsmcertd-worke, rhsmcertd, subscription-ma,
+  items: [dnf, dnf-automatic, rpm, rpmkey, yum, '"75-system-updat"', rhsmcertd-worke, rhsmcertd, subscription-ma,
           repoquery, rpmkeys, rpmq, yum-cron, yum-config-mana, yum-debug-dump,
           abrt-action-sav, rpmdb_stat, microdnf, rhn_check, yumdb]
 
@@ -326,7 +331,7 @@
 # Network
 - macro: inbound
   condition: >
-    (((evt.type in (accept,listen) and evt.dir=<) or
+    (((evt.type in (accept,accept4,listen) and evt.dir=<) or
       (evt.type in (recvfrom,recvmsg) and evt.dir=< and
        fd.l4proto != tcp and fd.connected=false and fd.name_changed=true)) and
      (fd.typechar = 4 or fd.typechar = 6) and
@@ -350,7 +355,7 @@
 # for efficiency.
 - macro: inbound_outbound
   condition: >
-    ((((evt.type in (accept,listen,connect) and evt.dir=<)) and
+    ((((evt.type in (accept,accept4,listen,connect) and evt.dir=<)) and
      (fd.typechar = 4 or fd.typechar = 6)) and
      (fd.ip != "0.0.0.0" and fd.net != "127.0.0.0/8") and
      (evt.rawres >= 0 or evt.res = EINPROGRESS))
@@ -491,6 +496,30 @@
   priority:
     WARNING
   tags: [host, container, filesystem, mitre_discovery, T1546.004]
+
+# List of allowed container images that are known to execute binaries not part of their base image.
+# Users can use this list to better tune the rule below (i.e reducing false positives) by considering their workloads,
+# since this requires application specific knowledge.
+- list: known_drop_and_execute_containers
+  items: []
+
+- rule: Drop and execute new binary in container
+  desc:
+    Detect if an executable not belonging to the base image of a container is being executed.
+    The drop and execute pattern can be observed very often after an attacker gained an initial foothold.
+    is_exe_upper_layer filter field only applies for container runtimes that use overlayfs as union mount filesystem.
+  condition: >
+    spawned_process
+    and container
+    and proc.is_exe_upper_layer=true
+    and not container.image.repository in (known_drop_and_execute_containers)
+  output: >
+    Executing binary not part of base image (user=%user.name user_loginuid=%user.loginuid user_uid=%user.uid comm=%proc.cmdline exe=%proc.exe container_id=%container.id
+    image=%container.image.repository proc.name=%proc.name proc.sname=%proc.sname proc.pname=%proc.pname proc.aname[2]=%proc.aname[2] exe_flags=%evt.arg.flags
+    proc.exe_ino=%proc.exe_ino proc.exe_ino.ctime=%proc.exe_ino.ctime proc.exe_ino.mtime=%proc.exe_ino.mtime proc.exe_ino.ctime_duration_proc_start=%proc.exe_ino.ctime_duration_proc_start
+    proc.exepath=%proc.exepath proc.cwd=%proc.cwd proc.tty=%proc.tty container.start_ts=%container.start_ts proc.sid=%proc.sid proc.vpgid=%proc.vpgid evt.res=%evt.res)
+  priority: CRITICAL
+  tags: [container, mitre_persistence, TA0003]
 
 - macro: user_known_cron_jobs
   condition: (never_true)
@@ -1881,6 +1910,7 @@
     - public.ecr.aws/falcosecurity/falco-no-driver
 
 # These container images are allowed to run with --privileged and full set of capabilities
+# TODO: Remove k8s.gcr.io reference after 01/Dec/2023
 - list: falco_privileged_images
   items: [
     falco_containers,
@@ -1902,11 +1932,15 @@
     k8s.gcr.io/ip-masq-agent-amd64,
     k8s.gcr.io/kube-proxy,
     k8s.gcr.io/prometheus-to-sd,
+    registry.k8s.io/ip-masq-agent-amd64,
+    registry.k8s.io/kube-proxy,
+    registry.k8s.io/prometheus-to-sd,
     quay.io/calico/node,
     sysdig/sysdig,
     sematext_images,
-    k8s.gcr.io/dns/k8s-dns-node-cache
-    ]
+    k8s.gcr.io/dns/k8s-dns-node-cache,
+    registry.k8s.io/dns/k8s-dns-node-cache
+  ]
 
 - macro: falco_privileged_containers
   condition: (openshift_image or
@@ -2409,6 +2443,7 @@
   condition: outbound and fd.sip="169.254.169.254" and container and not ec2_metadata_containers
   output: Outbound connection to EC2 instance metadata service (command=%proc.cmdline pid=%proc.pid connection=%fd.name %container.info image=%container.image.repository:%container.image.tag)
   priority: NOTICE
+  enabled: false
   tags: [network, aws, container, mitre_discovery, T1565]
 
 
@@ -2439,6 +2474,7 @@
 # allowed to contact the K8s API Server from within a container. This
 # might cover cases where the K8s infrastructure itself is running
 # within a container.
+# TODO: Remove k8s.gcr.io reference after 01/Dec/2023
 - macro: k8s_containers
   condition: >
     (container.image.repository in (gcr.io/google_containers/hyperkube-amd64,
@@ -2450,8 +2486,8 @@
      ibm_cloud_containers,
      velero/velero,
      quay.io/jetstack/cert-manager-cainjector, weaveworks/kured,
-     quay.io/prometheus-operator/prometheus-operator,
-     k8s.gcr.io/ingress-nginx/kube-webhook-certgen, quay.io/spotahome/redis-operator,
+     quay.io/prometheus-operator/prometheus-operator, k8s.gcr.io/ingress-nginx/kube-webhook-certgen,
+     registry.k8s.io/ingress-nginx/kube-webhook-certgen, quay.io/spotahome/redis-operator,
      registry.opensource.zalan.do/acid/postgres-operator, registry.opensource.zalan.do/acid/postgres-operator-ui,
      rabbitmqoperator/cluster-operator)
      or (k8s.ns.name = "kube-system"))
@@ -2492,7 +2528,7 @@
   tags: [network, k8s, container, mitre_persistence, T1205.001]
 
 - list: network_tool_binaries
-  items: [nc, ncat, nmap, dig, tcpdump, tshark, ngrep, telnet, mitmproxy, socat, zmap]
+  items: [nc, ncat, netcat, nmap, dig, tcpdump, tshark, ngrep, telnet, mitmproxy, socat, zmap]
 
 - macro: network_tool_procs
   condition: (proc.name in (network_tool_binaries))
@@ -2507,10 +2543,12 @@
   condition: (never_true)
 
 # Container is supposed to be immutable. Package management should be done in building the image.
+# TODO: Remove k8s.gcr.io reference after 01/Dec/2023
 - macro: pkg_mgmt_in_kube_proxy
   condition: >
     proc.cmdline startswith "update-alternat"
-    and container.image.repository = "k8s.gcr.io/kube-proxy"
+    and (container.image.repository = "registry.k8s.io/kube-proxy"
+    or container.image.repository = "k8s.gcr.io/kube-proxy")
 
 - rule: Launch Package Management Process in Container
   desc: Package management process ran inside container
@@ -2927,19 +2965,23 @@
 - list: k8s_client_binaries
   items: [docker, kubectl, crictl]
 
+# TODO: Remove k8s.gcr.io reference after 01/Dec/2023
 - list: user_known_k8s_ns_kube_system_images
   items: [
-      k8s.gcr.io/fluentd-gcp-scaler,
-      k8s.gcr.io/node-problem-detector/node-problem-detector
+    k8s.gcr.io/fluentd-gcp-scaler,
+    k8s.gcr.io/node-problem-detector/node-problem-detector,
+    registry.k8s.io/fluentd-gcp-scaler,
+    registry.k8s.io/node-problem-detector/node-problem-detector
   ]
 
 - list: user_known_k8s_images
   items: [
-      mcr.microsoft.com/aks/hcp/hcp-tunnel-front
+    mcr.microsoft.com/aks/hcp/hcp-tunnel-front
   ]
 
 # Whitelist for known docker client binaries run inside container
-# - k8s.gcr.io/fluentd-gcp-scaler in GCP/GKE
+# - k8s.gcr.io/fluentd-gcp-scaler / registry.k8s.io/fluentd-gcp-scaler in GCP/GKE
+# TODO: Remove k8s.gcr.io reference after 01/Dec/2023
 - macro: user_known_k8s_client_container
   condition: >
     (k8s.ns.name="kube-system" and container.image.repository in (user_known_k8s_ns_kube_system_images)) or container.image.repository in (user_known_k8s_images)
@@ -2959,7 +3001,7 @@
 
 - rule: Packet socket created in container
   desc: Detect new packet socket at the device driver (OSI Layer 2) level in a container. Packet socket could be used for ARP Spoofing and privilege escalation(CVE-2020-14386) by attacker.
-  condition: evt.type=socket and evt.arg[0]=AF_PACKET and container and not proc.name in (user_known_packet_socket_binaries)
+  condition: evt.type=socket and evt.arg[0] contains AF_PACKET and container and not proc.name in (user_known_packet_socket_binaries)
   output: Packet socket was created in a container (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline pid=%proc.pid socket_info=%evt.args container_id=%container.id container_name=%container.name image=%container.image.repository:%container.image.tag)
   priority: NOTICE
   tags: [container, network, mitre_discovery, T1046]
@@ -2999,6 +3041,9 @@
 
 - list: allowed_image
   items: [] # add image to monitor, i.e.: bitnami/nginx
+
+- list: authorized_server_binary
+  items: []  # add binary to allow, i.e.: nginx
 
 - list: authorized_server_port
   items: [] # add port to allow, i.e.: 80
@@ -3129,15 +3174,22 @@
      (fd.sip.name in (c2_server_fqdn_list)))
   output: Outbound connection to C2 server (c2_domain=%fd.sip.name c2_addr=%fd.sip command=%proc.cmdline connection=%fd.name user=%user.name user_loginuid=%user.loginuid container_id=%container.id image=%container.image.repository)
   priority: WARNING
+  enabled: false
   tags: [host, container, network, mitre_command_and_control, TA0011]
 
-- list: white_listed_modules
+- list: allowed_container_images_loading_kernel_module
   items: []
 
+# init_module and finit_module syscalls are available since Falco 0.35.0
+# rule coverage now extends to modprobe usage via init_module logging
+# and previous alerting on spawned_process and insmod is now covered
+# by finit_module syscall
 - rule: Linux Kernel Module Injection Detected
   desc: Detect kernel module was injected (from container).
-  condition: spawned_process and container and proc.name=insmod and not proc.args in (white_listed_modules) and thread.cap_effective icontains sys_module
-  output: Linux Kernel Module injection using insmod detected (user=%user.name user_loginuid=%user.loginuid parent_process=%proc.pname module=%proc.args %container.info image=%container.image.repository:%container.image.tag)
+  condition: kernel_module_load and container
+    and not container.image.repository in (allowed_container_images_loading_kernel_module)
+    and thread.cap_effective icontains sys_module
+  output: Linux Kernel Module injection from container detected (user=%user.name uid=%user.uid user_loginuid=%user.loginuid process_name=%proc.name parent_process_name=%proc.pname parent_exepath=%proc.pexepath %proc.aname[2] %proc.aexepath[2] module=%proc.args %container.info image=%container.image.repository:%container.image.tag res=%evt.res syscall=%evt.type)
   priority: WARNING
   tags: [host, container, process, mitre_execution, mitre_persistence, TA0002]
 
@@ -3277,10 +3329,11 @@
         java_network_read and evt.buffer bcontains cafebabe
   output: Java process class file download (user=%user.name user_loginname=%user.loginname user_loginuid=%user.loginuid event=%evt.type connection=%fd.name server_ip=%fd.sip server_port=%fd.sport proto=%fd.l4proto process=%proc.name command=%proc.cmdline pid=%proc.pid parent=%proc.pname buffer=%evt.buffer container_id=%container.id image=%container.image.repository)
   priority: CRITICAL
+  enabled: false
   tags: [host, container, process, mitre_initial_access, T1190]
 
 - list: docker_binaries
-  items: [dockerd, containerd-shim, "runc:[1:CHILD]", pause]
+  items: [docker, dockerd, containerd-shim, "runc:[1:CHILD]", pause, exe, docker-compose, docker-entrypoi, docker-runc-cur, docker-current, dockerd-current]
 
 - macro: docker_procs
   condition: proc.name in (docker_binaries)
@@ -3315,10 +3368,22 @@
 - macro: known_ptrace_procs
   condition: (proc.name in (known_ptrace_binaries))
 
+- macro: ptrace_attach_or_injection
+  condition: >
+    evt.type=ptrace and evt.dir=> and
+    (evt.arg.request contains PTRACE_POKETEXT or
+    evt.arg.request contains PTRACE_POKEDATA or
+    evt.arg.request contains PTRACE_ATTACH or
+    evt.arg.request contains PTRACE_SEIZE or
+    evt.arg.request contains PTRACE_SETREGS)
+
 - rule: PTRACE attached to process
   desc: "This rule detects an attempt to inject code into a process using PTRACE."
-  condition: evt.type=ptrace and evt.dir=> and evt.arg.request in (5, 6, 11, 20, 27) and proc_name_exists and not known_ptrace_procs
-  output: Detected ptrace PTRACE_ATTACH attempt (proc.cmdline=%proc.cmdline container=%container.info evt.type=%evt.type evt.arg.request=%evt.arg.request proc.pid=%proc.pid proc.cwd=%proc.cwd proc.ppid=%proc.ppid proc.pcmdline=%proc.pcmdline proc.sid=%proc.sid proc.exepath=%proc.exepath user.uid=%user.uid user.loginuid=%user.loginuid user.loginname=%user.loginname user.name=%user.name group.gid=%group.gid group.name=%group.name container.id=%container.id container.name=%container.name image=%container.image.repository)
+  condition: ptrace_attach_or_injection and proc_name_exists and not known_ptrace_procs
+  output: >
+    Detected ptrace PTRACE_ATTACH attempt (proc.cmdline=%proc.cmdline container=%container.info evt.type=%evt.type evt.arg.request=%evt.arg.request proc.pid=%proc.pid proc.cwd=%proc.cwd proc.ppid=%proc.ppid
+    proc.pcmdline=%proc.pcmdline proc.sid=%proc.sid proc.exepath=%proc.exepath user.uid=%user.uid user.loginuid=%user.loginuid user.loginname=%user.loginname user.name=%user.name group.gid=%group.gid
+    group.name=%group.name container.id=%container.id container.name=%container.name image=%container.image.repository)
   priority: WARNING
   tags: [host, container, process, mitre_execution, mitre_privilege_escalation, T1055.008]
 
