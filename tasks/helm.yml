@@ -1,0 +1,35 @@
+---
+# https://github.com/falcosecurity/charts/tree/master/falco
+
+- name: Check helm is available
+  ansible.builtin.command:
+    cmd: which helm
+  changed_when: false
+  failed_when: false
+  register: helm
+
+- name: Falco helm install
+  when: helm.rc == 0
+  block:
+    - name: Add falcosecurity helm repository
+      kubernetes.core.helm_repository:
+        name: falcosecurity
+        repo_url: https://falcosecurity.github.io/charts
+
+    - name: Deploy latest version of Falco chart inside falco namespace
+      kubernetes.core.helm:
+        name: falco
+        chart_ref: falcosecurity/falco
+        release_namespace: falco
+        create_namespace: true
+        update_repo_cache: true
+
+- name: Fatal! no helm
+  ansible.builtin.fail:
+    msg: "Fatal! no helm executable found"
+  when: helm.rc != 0
+
+# kubectl get pods
+
+# Test
+# kubectl logs <pod name>
