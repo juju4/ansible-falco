@@ -93,7 +93,7 @@
   condition: >
     user.name=_zeek and
     (proc.cmdline startswith "bash /opt/zeek/share/zeekctl/scripts/archive-log " or
-     proc.cmdline startswith "/opt/zeek/share/zeekctl/scripts/postprocessors/summarize-connections "
+     proc.cmdline startswith "bash /opt/zeek/share/zeekctl/scripts/postprocessors/summarize-connections conn."
     )
 
 - macro: wwwroot_dir
