@@ -2,6 +2,9 @@
 
 falco_repo_key: "{% if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int <= 8 %}https://falco.org/repo/falcosecurity-3672BA8F.asc{% else %}https://falco.org/repo/falcosecurity-packages.asc{% endif %}"
 falco_dev: false
+falco_mode: modern-bpf
+# falco_mode: bpf
+# falco_mode: kmod
 falco_k8s_helm: false
 # required for reporting using jq
 falco_json_output: true
