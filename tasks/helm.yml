@@ -23,6 +23,7 @@
         release_namespace: falco
         create_namespace: true
         update_repo_cache: true
+        values: "{{ falco_helm_values | default(omit) }}"
 
 - name: Fatal! no helm
   ansible.builtin.fail:
