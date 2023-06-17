@@ -1,0 +1,9 @@
+---
+
+- name: Test Integration default
+  hosts: all
+  vars:
+    falco_k8s_helm: true
+  roles:
+    - cyverse_ansible.ansible_k3s
+    - juju4.falco

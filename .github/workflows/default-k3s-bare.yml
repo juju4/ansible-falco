@@ -1,0 +1,144 @@
+---
+name: default-k3s-bare
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    runs-on: ${{ matrix.distribution }}-${{ matrix.version }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - distribution: ubuntu
+            version: '22.04'
+            experimental: false
+          - distribution: ubuntu
+            version: '20.04'
+            experimental: false
+    env:
+      ANSIBLE_CALLBACKS_ENABLED: profile_tasks
+      ANSIBLE_EXTRA_VARS: ""
+      ANSIBLE_ROLE: juju4.falco
+      SUITE: default-k3s
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: ${{ env.ANSIBLE_ROLE }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: ACL
+        run: |
+          sudo apt-get install -y acl || true
+          mount
+          sudo mount -o remount,acl / || true
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install ansible-lint flake8 yamllint
+          which ansible
+          pip3 install ansible
+          pip3 show ansible
+          ansible --version
+          cd $GITHUB_WORKSPACE/juju4.harden
+          [ -f get-dependencies.sh ] && sh -x get-dependencies.sh
+          { echo '[defaults]'; echo 'callbacks_enabled = profile_tasks, timer'; echo 'roles_path = ../'; echo 'ansible_python_interpreter: /usr/bin/python3'; } >> ansible.cfg
+      - name: Environment
+        run: |
+          set -x
+          pwd
+          env
+          find . -ls
+      - name: run test
+        run: |
+          cd $GITHUB_WORKSPACE/$ANSIBLE_ROLE && ansible-playbook -i localhost, --connection=local --become -vvv test/integration/$SUITE/default.yml ${ANSIBLE_EXTRA_VARS}
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+      - name: idempotency run
+        run: |
+          cd $GITHUB_WORKSPACE/$ANSIBLE_ROLE && ansible-playbook -i localhost, --connection=local --become -vvv test/integration/$SUITE/default.yml ${ANSIBLE_EXTRA_VARS} | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 0)
+      - name: On failure
+        run: |
+          systemctl -l --no-pager status
+          systemctl -l --no-pager --failed
+          ls -l /usr/bin/ | egrep '(python|pip|ansible)'
+          pip freeze
+          pip3 freeze
+          ip addr
+          cat /etc/resolv.conf
+          host www.google.com
+          ping -c 1 www.google.com || true
+          ping -c 1 8.8.8.8 || true
+        if: ${{ failure() }}
+        continue-on-error: true
+      - name: After script - ansible setup
+        run: |
+          ansible -i inventory --connection=local -m setup localhost
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - systemd
+        run: |
+          systemctl -l --no-pager status k3s || true
+          systemd-analyze --no-pager security || true
+          rsyslogd -v
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - network
+        run: |
+          set -x
+          sudo ss -tunap
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - process
+        run: |
+          set -x
+          ps aux
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - k8
+        run: |
+          set -x
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          kubectl get nodes
+          kubectl get pods --all-namespaces -o wide
+          kubectl get services
+          kubectl get apiservices
+          k3s check-config || true
+          kubectl config view || true
+          kubectl logs daemonset/falco -n falco -c falco-driver-loader
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - helm
+        run: |
+          set -x
+          helm ls --all-namespaces
+          helm status falco || true
+          helm history falco || true
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - etc
+        run: |
+          set -x
+          ls -l /etc/rancher/k3s/
+          cat /etc/rancher/k3s/config.yaml
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - journalctl
+        run: |
+          set -x
+          journalctl -xeu k3s -l --no-pager
+        if: ${{ always() }}
+        continue-on-error: true
