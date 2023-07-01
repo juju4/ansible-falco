@@ -5,12 +5,25 @@
     name: [apt-transport-https, gpg]
     state: present
 
-- name: Add falcosecurity key
-  ansible.builtin.apt_key:
+- name: Add falcosecurity APT key
+  ansible.builtin.get_url:
     url: "{{ falco_repo_key }}"
-    state: present
-  register: pkg_result
-  until: pkg_result is success
+    dest: /etc/apt/trusted.gpg.d/falco.asc
+    mode: 0644
+  register: dl_result
+  until: dl_result is success
+  when: proxy_url is not defined or not proxy_url | string
+
+- name: Proxy
+  when: proxy_url is defined and proxy_url | string
+  block:
+    # workaround for apt_key not supporting proxy (ansible#31691)
+    - name: Download Falco Apt signing key  # noqa command-instead-of-module
+      ansible.builtin.command: curl -s -o /etc/apt/trusted.gpg.d/falco.asc "{{ falco_repo_key }}"
+      args:
+        creates: /etc/apt/trusted.gpg.d/falco.asc
+      environment:
+        http_proxy: "{{ proxy_url | default(omit) }}"
 
 - name: Install falcosecurity apt source
   vars:
@@ -24,7 +37,7 @@
 
 - name: Debian | Install kernel headers
   ansible.builtin.apt:
-    name: "linux-headers-{{ ansible_kernel }}"
+    name: "{% if 'pve' in ansible_kernel %}pve-headers-{{ ansible_kernel }}{% else %}linux-headers-{{ ansible_kernel }}{% endif %}"
     state: present
   ignore_errors: true
   register: pkg_result
