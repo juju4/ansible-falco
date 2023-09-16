@@ -73,7 +73,8 @@ CapabilityBoundingSet=~CAP_NET_ADMIN
 CapabilityBoundingSet=~CAP_KILL
 CapabilityBoundingSet=~CAP_MKNOD
 CapabilityBoundingSet=~CAP_NET_BIND_SERVICE CAP_NET_BROADCAST
-CapabilityBoundingSet=~CAP_SYS_NICE CAP_SYS_RESOURCE
+CapabilityBoundingSet=~CAP_SYS_NICE
+# CapabilityBoundingSet=~CAP_SYS_RESOURCE
 CapabilityBoundingSet=~CAP_SYS_BOOT
 CapabilityBoundingSet=~CAP_LINUX_IMMUTABLE
 CapabilityBoundingSet=~CAP_SYS_CHROOT
@@ -124,5 +125,3 @@ MemoryLimit={{ falco_cgroups_memorylimit | default('1G') }}
 
 [Install]
 WantedBy=multi-user.target
-
---
