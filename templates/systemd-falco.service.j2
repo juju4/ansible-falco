@@ -11,8 +11,8 @@ Wants=falcoctl-artifact-follow.service
 [Service]
 Type=simple
 User=root
-{% if falco_mode == 'modern-bpf' %}
-ExecStart=/usr/bin/falco --pidfile=/var/run/falco.pid --modern-bpf
+{% if falco_mode == 'modern-ebpf' %}
+ExecStart=/usr/bin/falco --pidfile=/var/run/falco.pid -o engine.kind=modern_ebpf
 {% elif falco_mode == 'bpf' %}
 Environment=FALCO_BPF_PROBE=
 ExecStart=/usr/bin/falco --pidfile=/var/run/falco.pid
