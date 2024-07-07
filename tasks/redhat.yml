@@ -18,7 +18,7 @@
     validate_certs: "{{ falco_rpm_validate_certs | default('yes') }}"
 
 - name: Redhat | Install kernel-devel
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "kernel-devel-{{ ansible_kernel }}"
     state: present
     update_cache: yes
@@ -27,7 +27,7 @@
   until: pkg_result is success
 
 - name: Redhat | Install falco
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ falco_pkgs }}"
     state: present
     update_cache: yes
