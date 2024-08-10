@@ -21,6 +21,8 @@ jobs:
       max-parallel: 4
       matrix:
         include:
+          - os: ubuntu-24.04
+            experimental: true
           - os: ubuntu-22.04
             experimental: true
           - os: ubuntu-20.04
