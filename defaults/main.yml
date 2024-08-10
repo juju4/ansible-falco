@@ -55,3 +55,7 @@ falco_grpc_unix_enabled: false
 falco_reporting: true
 falco_reporting_template: falco_report.sh
 falco_reporting_dest: /var/tmp
+
+falcoctl_artifacts_follow: []
+#  - github-rules
+#  - k8saudit-rules

@@ -1,0 +1,25 @@
+---
+
+- name: Falcoctl | Get current index
+  ansible.builtin.command:
+    cmd: falcoctl index list
+  changed_when: false
+  register: falcoctl_index
+
+- name: Falcoctl | Configure index
+  ansible.builtin.command:  # noqa no-changed-when
+    cmd: falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
+  when:
+    - "'falcosecurity' not in falcoctl_index.stdout"
+
+- name: Falcoctl | Configure driver
+  ansible.builtin.command:  # noqa no-changed-when
+    cmd: "{{ item }}"
+  loop:
+    - falcoctl driver config --type ebpf
+    - falcoctl driver install  # Will build/fech driver if kernel is supported
+
+- name: Falcoctl | Configure follow artifacts
+  ansible.builtin.command:  # noqa no-changed-when
+    cmd: "falcoctl artifact follow {{ item }}"
+  loop: "{{ falcoctl_artifacts_follow }}"

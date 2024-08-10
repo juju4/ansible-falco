@@ -17,3 +17,6 @@
 - name: Import falco (distrib package)
   ansible.builtin.import_tasks: falco.yml
   when: not falco_k8s_helm | bool
+
+- name: Import falcoctl
+  ansible.builtin.import_tasks: falcoctl.yml
