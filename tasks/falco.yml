@@ -51,6 +51,8 @@
 
 - name: Import systemd
   ansible.builtin.import_tasks: systemd.yml
+  vars:
+    unit_name: falco
   when: falco_systemd_restriction_enable and ansible_service_mgr == 'systemd'
 
 - name: Print ansible_virtualization_type when verbosity is 1
