@@ -69,7 +69,7 @@ jobs:
           ANSIBLE_FORCE_COLOR: '1'
       - name: idempotency run
         run: |
-          cd $GITHUB_WORKSPACE/juju4.falco && ansible-playbook -i localhost, --connection=local --become -vvv molecule/default/converge.yml | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 1)
+          cd $GITHUB_WORKSPACE/juju4.falco && ansible-playbook -i localhost, --connection=local --become -vvv molecule/default/converge.yml | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 0)
       - name: On failure
         run: |
           systemctl -l --no-pager status
