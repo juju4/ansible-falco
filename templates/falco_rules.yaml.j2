@@ -407,36 +407,6 @@
   priority: NOTICE
   tags: [host, container, network, mitre_command_and_control, mitre_lateral_movement, T1021.004]
 
-# These rules and supporting macros are more of an example for how to
-# use the fd.*ip and fd.*ip.name fields to match connection
-# information against ips, netmasks, and complete domain names.
-#
-# To use this rule, you should enable it and
-# populate allowed_{source,destination}_{ipaddrs,networks,domains} with the
-# values that make sense for your environment.
-
-# Note that this can be either individual IPs or netmasks
-- list: allowed_outbound_destination_ipaddrs
-  items: ['"127.0.0.1"', '"8.8.8.8"']
-
-- list: allowed_outbound_destination_networks
-  items: ['"127.0.0.1/8"']
-
-- list: allowed_outbound_destination_domains
-  items: [google.com, www.yahoo.com]
-
-- rule: Unexpected outbound connection destination
-  desc: Detect any outbound connection to a destination outside of an allowed set of ips, networks, or domain names
-  condition: >
-    outbound and not
-    ((fd.sip in (allowed_outbound_destination_ipaddrs)) or
-     (fd.snet in (allowed_outbound_destination_networks)) or
-     (fd.sip.name in (allowed_outbound_destination_domains)))
-  enabled: false
-  output: Disallowed outbound connection destination (command=%proc.cmdline pid=%proc.pid connection=%fd.name user=%user.name user_loginuid=%user.loginuid container_id=%container.id image=%container.image.repository)
-  priority: NOTICE
-  tags: [host, container, network, mitre_command_and_control, TA0011]
-
 - list: allowed_inbound_source_ipaddrs
   items: ['"127.0.0.1"']
 
@@ -2718,42 +2688,6 @@
   priority: WARNING
   tags: [container, network, mitre_discovery, T1046]
 
-- list: allowed_image
-  items: [] # add image to monitor, i.e.: bitnami/nginx
-
-- list: authorized_server_binary
-  items: []  # add binary to allow, i.e.: nginx
-
-- list: authorized_server_port
-  items: [] # add port to allow, i.e.: 80
-
-# # How to test:
-# kubectl run --image=nginx nginx-app --port=80 --env="DOMAIN=cluster"
-# kubectl expose deployment nginx-app --port=80 --name=nginx-http --type=LoadBalancer
-# # On minikube:
-# minikube service nginx-http
-# # On general K8s:
-# kubectl get services
-# kubectl cluster-info
-# # Visit the Nginx service and port, should not fire.
-# # Change rule to different port, then different process name, and test again that it fires.
-
-- rule: Outbound or Inbound Traffic not to Authorized Server Process and Port
-  desc: Detect traffic that is not to authorized server process and port.
-  condition: >
-    inbound_outbound and
-    container and
-    container.image.repository in (allowed_image) and
-    not proc.name in (authorized_server_binary) and
-    not fd.sport in (authorized_server_port)
-  enabled: false
-  output: >
-    Network connection outside authorized port and binary
-    (command=%proc.cmdline pid=%proc.pid connection=%fd.name user=%user.name user_loginuid=%user.loginuid container_id=%container.id
-    image=%container.image.repository)
-  priority: WARNING
-  tags: [container, network, mitre_discovery, TA0011]
-
 - macro: user_known_stand_streams_redirect_activities
   condition: (never_true)
 
@@ -2834,46 +2768,6 @@
   output: Drift detected (open+create), new executable created in a container (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline pid=%proc.pid filename=%evt.arg.filename name=%evt.arg.name mode=%evt.arg.mode event=%evt.type)
   priority: ERROR
   tags: [container, process, filesystem, mitre_execution, T1059]
-
-- list: c2_server_ip_list
-  items: []
-
-- list: c2_server_fqdn_list
-  items: []
-
-# For example, you can fetch a list of IP addresses and FQDN on this website:
-# https://feodotracker.abuse.ch/downloads/ipblocklist_recommended.json.
-# Use Falco HELM chart to update (append) the c2 server lists with your values.
-# See an example below.
-#
-#  ```yaml
-#  # values.yaml Falco HELM chart file
-#  [...]
-#  customRules:
-#    c2-servers-list.yaml: |-
-#      - list: c2_server_ip_list
-#        append: true
-#        items:
-#        - "'51.178.161.32'"
-#        - "'46.101.90.205'"
-#
-#      - list: c2_server_fqdn_list
-#        append: true
-#        items:
-#        - "srv-web.ffconsulting.com"
-#        - "57.ip-142-44-247.net"
-#  ```
-
-- rule: Outbound Connection to C2 Servers
-  desc: Detect outbound connection to command & control servers thanks to a list of IP addresses & a list of FQDN.
-  condition: >
-    outbound and
-    ((fd.sip in (c2_server_ip_list)) or
-     (fd.sip.name in (c2_server_fqdn_list)))
-  output: Outbound connection to C2 server (c2_domain=%fd.sip.name c2_addr=%fd.sip command=%proc.cmdline connection=%fd.name user=%user.name user_loginuid=%user.loginuid container_id=%container.id image=%container.image.repository)
-  priority: WARNING
-  enabled: false
-  tags: [host, container, network, mitre_command_and_control, TA0011]
 
 - list: allowed_container_images_loading_kernel_module
   items: []
