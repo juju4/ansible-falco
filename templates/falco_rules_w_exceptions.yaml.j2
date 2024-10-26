@@ -1481,12 +1481,6 @@
     proc.args contains "exec " and
     proc.args contains "/usr/bin/mandb")
 
-- macro: run_ms_omsagent_read_sensitive_file
-  condition: >
-    (user.name=omsagent and proc.pname=dsc_host and fd.name=/etc/security/pwquality.conf) or
-    (user.name=omsagent and proc.name="python3 /opt/microsoft/omsconfig/Scripts/python3/client.py 7") or
-    (user.name=root and proc.pname=osqueryd and fd.name startswith /etc/sudoers)
-
 - rule: Read sensitive file untrusted
   desc: >
     An attempt to read any sensitive file (e.g. files containing user/password/authentication
