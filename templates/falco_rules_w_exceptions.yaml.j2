@@ -72,8 +72,8 @@
 # later you can customize, override the macros to something like
 # - macro: custom_procs
 #   condition: (proc.name in (custom1, custom2, custom3))
-# - macro: always_true
-#   condition: (evt.num>=0)
+- macro: always_true
+  condition: (evt.num>=0)
 
 # In some cases, such as dropped system call events, information about
 # the process name may be missing. For some rules that really depend
