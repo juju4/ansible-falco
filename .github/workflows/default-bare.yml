@@ -111,8 +111,8 @@ jobs:
           ls -la /sys/kernel/btf/vmlinux
           strings /sys/kernel/btf/vmlinux | grep -e BPF_TRACE_RAW_TP -e BPF_TRACE_FENTRY
           grep DEBUG_INFO /boot/config-*
-          apt-get install -y linux-tools-generic
-          bpftool feature probe kernel | grep -e "map_type ringbuf is available" -e "program_type tracing is available"
+          sudo apt-get install -y linux-tools-generic
+          sudo bpftool feature probe kernel | grep -e "map_type ringbuf is available" -e "program_type tracing is available"
           dpkg -l | grep libbpf
         if: ${{ always() }}
         continue-on-error: true
