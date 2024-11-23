@@ -9,7 +9,7 @@
   ansible.builtin.get_url:
     url: "{{ falco_repo_key }}"
     dest: /etc/apt/trusted.gpg.d/falco.asc
-    mode: 0644
+    mode: '0644'
   register: dl_result
   until: dl_result is success
   when: proxy_url is not defined or not proxy_url | string
@@ -32,7 +32,7 @@
     # repo: "deb [signed-by={{ falco_repo_key }}] https://download.falco.org/packages/{{ pkg_name }} stable main"
     repo: "deb https://download.falco.org/packages/{{ pkg_name }} stable main"
     filename: falcosecurity
-    mode: 0444
+    mode: '0444'
     state: present
 
 - name: Debian | Install kernel headers

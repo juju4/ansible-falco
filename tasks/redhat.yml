@@ -14,7 +14,7 @@
   ansible.builtin.get_url:
     url: "https://falco.org/repo/{{ repo_name }}"
     dest: /etc/yum.repos.d/falcosecurity.repo
-    mode: 0644
+    mode: '0644'
     validate_certs: "{{ falco_rpm_validate_certs | default('yes') }}"
 
 - name: Redhat | Install kernel-devel
