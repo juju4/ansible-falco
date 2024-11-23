@@ -26,14 +26,15 @@ falco_plugins: []
 falco_load_plugins: []
 
 falco_rules_files:
-  - /etc/falco/falco_rules.yaml
   - /etc/falco/rules.d
+  - /etc/falco/falco_rules.yaml
   # - /etc/falco/falco_rules.local.yaml
   # requires json and k8s_audit plugin
   # - /etc/falco/k8s_audit_rules.yaml
-falco_config_template_upload:
-  - { s: falco_rules_w_exceptions.yaml, d: falco_rules.yaml }
-  # - { s: falco_rules.local.yaml, d: falco_rules.local.yaml }
+falco_config_template_upload: []
+# if using falcoctl, falco_rules.yaml will get overwritten
+# - { s: falco_rules_w_exceptions.yaml, d: falco_rules.yaml }
+# - { s: falco_rules.local.yaml, d: falco_rules.local.yaml }
 
 ## else some macro can be very verbose (ex: on LXD or lxd+kitchen)
 falco_dontwatch_containers: true
