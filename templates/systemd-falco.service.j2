@@ -118,9 +118,9 @@ SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @clock @raw-io @reboot 
 SystemCallArchitectures=native
 {% if falco_cgroups_restriction_enable|bool %}
 
-CPUShares={{ falco_cgroups_cpushares | default('1024') }}
+CPUWeight={{ falco_cgroups_cpushares | default('1024') }}
 CPUQuota={{ falco_cgroups_cpuquota | default('40%') }}
-MemoryLimit={{ falco_cgroups_memorylimit | default('1G') }}
+MemoryMax={{ falco_cgroups_memorylimit | default('1G') }}
 {% endif %}
 
 [Install]
