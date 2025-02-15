@@ -5,5 +5,7 @@ falco_pkgs:
     - jq          # Slack output depends on jq
     - mailutils   # Mail output depends on mailutils
 #    - sysdig-dkms
+    - systemd
+    - kmod
 
 syslog_user: root

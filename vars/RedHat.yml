@@ -3,5 +3,7 @@
 falco_pkgs:
   - dkms
   - falco
+  - systemd
+  - kmod
 
 syslog_user: root
