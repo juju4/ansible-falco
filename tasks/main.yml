@@ -35,3 +35,4 @@
 
 - name: Import falcoctl
   ansible.builtin.import_tasks: falcoctl.yml
+  when: falcoctl_enabled | bool
