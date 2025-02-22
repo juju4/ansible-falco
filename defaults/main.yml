@@ -6,7 +6,7 @@ falco_mode: modern-ebpf
 # falco_mode: bpf
 # falco_mode: kmod
 falco_k8s_helm: false
-falcoctl_enabled: true
+falcoctl_enabled: false
 # required for reporting using jq
 falco_json_output: true
 falco_log_stderr: true
