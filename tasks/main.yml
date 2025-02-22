@@ -12,6 +12,19 @@
       paths:
         - 'vars'
 
+- name: Driver modern-ebpf | Set fact
+  ansible.builtin.set_fact:
+    falco_install_env:
+      FALCO_DRIVER_CHOICE: modern_ebpf
+  when:
+    - falco_mode == 'modern-ebpf'
+
+- name: Driver others | Set fact
+  ansible.builtin.set_fact:
+    falco_pkgs: "{{ falco_pkgs + ['dkms'] }}"
+  when:
+    - falco_mode != 'modern-ebpf'
+
 - name: Import helm
   ansible.builtin.import_tasks: helm.yml
   when: falco_k8s_helm | bool

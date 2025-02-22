@@ -48,5 +48,6 @@
     name: "{{ falco_pkgs }}"
     state: present
     update_cache: yes
+  environment: "{{ falco_install_env | default(omit) }}"
   register: pkg_result
   until: pkg_result is success
