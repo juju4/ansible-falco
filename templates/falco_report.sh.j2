@@ -18,6 +18,9 @@ check_tee_output
 
 date=$(date +%Y%m%d)
 f=/var/log/falco/falco.log
+if [ "X$#" = X1 -a -f "$1" ]; then
+  f="$1"
+fi
 echo
 echo
 echo "      FALCO DAILY REPORT ${date} for ${f}"
