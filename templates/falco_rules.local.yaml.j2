@@ -79,15 +79,19 @@
 # logrotate with shred option
 - macro: user_known_remove_data_activities
   condition: >
-    proc.cmdline="shred -u -" and (user.name="root" or user.name="syslog") and proc.pcmdline="logrotate /etc/logrotate.conf"
+    proc.cmdline="shred -u -" and (user.name="root" or user.name="syslog") and proc.pname="logrotate"
 
 - macro: allowed_clear_log_files
   condition: >
-    user.name=root and proc.cmdline=dnscrypt-proxy and fd.name startswith "/var/log/dnscrypt-proxy2-"
+    user.name="root" and proc.cmdline="dnscrypt-proxy" and fd.name startswith "/var/log/dnscrypt-proxy2-"
 
 - macro: user_known_read_sensitive_files_activities
   condition:
-    (user.name=root and proc.pname=osqueryd and proc.cmdline=SchedulerRunner)
+    (user.name="root" and proc.pname="osqueryd" and proc.cmdline="SchedulerRunner") or
+    (user.name="root" and proc.pname="lynis" and proc.cmdline="grep -E -v :[\!\*x]([\*\!])?: /etc/shadow")
+    (user.name="root" and proc.pname="lynis" and proc.cmdline="grep -E -v ^# /etc/pam.conf")
+    (user.name="root" and proc.pname="lynis" and proc.cmdline="grep pam_tmpdir.so /etc/pam.d/common-session")
+    (user.name="root" and proc.pname="lynis" and proc.cmdline="cat /etc/passwd /etc/shadow")
 
 - macro: user_known_write_below_root_activities
   condition: >
