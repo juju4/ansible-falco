@@ -31,9 +31,6 @@ jobs:
           - molecule_distro: 'ubuntu:22.04'
             experimental: false
             suite: default
-          - molecule_distro: 'ubuntu:20.04'
-            experimental: false
-            suite: default
           - molecule_distro: 'debian:12'
             experimental: false
             suite: default

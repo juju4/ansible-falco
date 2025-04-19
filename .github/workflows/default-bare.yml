@@ -25,8 +25,6 @@ jobs:
             experimental: true
           - os: ubuntu-22.04
             experimental: true
-          - os: ubuntu-20.04
-            experimental: false
     env:
       ANSIBLE_CALLBACKS_ENABLED: profile_tasks
 

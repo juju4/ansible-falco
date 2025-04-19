@@ -20,10 +20,10 @@ jobs:
       matrix:
         include:
           - distribution: ubuntu
-            version: '22.04'
+            version: '24.04'
             experimental: true
           - distribution: ubuntu
-            version: '20.04'
+            version: '22.04'
             experimental: true
     env:
       ANSIBLE_CALLBACKS_ENABLED: profile_tasks
