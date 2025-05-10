@@ -25,6 +25,8 @@ jobs:
             experimental: true
           - os: ubuntu-22.04
             experimental: true
+          - os: ubuntu-24.04-arm
+            experimental: true
     env:
       ANSIBLE_CALLBACKS_ENABLED: profile_tasks
 
