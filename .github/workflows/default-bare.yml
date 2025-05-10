@@ -22,11 +22,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            experimental: true
+            experimental: false
           - os: ubuntu-22.04
-            experimental: true
+            experimental: false
           - os: ubuntu-24.04-arm
-            experimental: true
+            experimental: false
     env:
       ANSIBLE_CALLBACKS_ENABLED: profile_tasks
 
