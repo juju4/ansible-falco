@@ -468,7 +468,7 @@ load_plugins: {{ falco_load_plugins }}
 # option.
 {% if falco_plugins %}
 plugins:
-{{ falco_plugins | to_nice_yaml(indent=2, sort_keys=false) | strip | indent(2, true) }}
+{{ falco_plugins | to_nice_yaml(indent=2, sort_keys=false) | trim | indent(2, true) }}
 {% else %}
 plugins: []
 {% endif %}
@@ -1287,5 +1287,4 @@ base_syscalls:
 #
 falco_libs:
   thread_table_size: 262144
-  # FIXME! schema validation: failed for <root>[falco_libs]: Object contains a property that could not be validated using 'properties' or 'additionalProperties' constraints: 'snaplen'.
-  # snaplen: 80
+  snaplen: 80
