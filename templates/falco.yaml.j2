@@ -468,12 +468,7 @@ load_plugins: {{ falco_load_plugins }}
 # option.
 {% if falco_plugins %}
 plugins:
-{% for p in falco_plugins %}
-  - name: {{ p.name }}
-    library_path: {{ p.lib_path }}
-    init_config: "{{ p.init_config }}"
-    open_params: "{{ p.open_params }}"
-{% endfor %}
+{{ falco_plugins | to_nice_yaml(indent=2, sort_keys=false) | strip | indent(2, true) }}
 {% else %}
 plugins: []
 {% endif %}
