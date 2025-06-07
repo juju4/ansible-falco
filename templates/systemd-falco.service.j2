@@ -108,13 +108,8 @@ PrivateMounts=true
 RestrictRealtime=yes
 RestrictSUIDSGID=yes
 
-{% if (ansible_os_family == 'RedHat' and ansible_distribution_major_version|int >= 8) or
-      (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int >= 20) or
-      (ansible_distribution == 'Debian' and ansible_distribution_release == 'NA')
-%}
-SystemCallFilter=@system-service @privileged @module
-{% endif %}
-SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @clock @raw-io @reboot @swap @resources
+SystemCallFilter=@system-service @privileged @module @resources
+SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @clock @raw-io @reboot @swap
 SystemCallArchitectures=native
 {% if falco_cgroups_restriction_enable|bool %}
 
