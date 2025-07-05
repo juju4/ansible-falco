@@ -86,12 +86,20 @@
     user.name="root" and proc.cmdline="dnscrypt-proxy" and fd.name startswith "/var/log/dnscrypt-proxy2-"
 
 - macro: user_known_read_sensitive_files_activities
-  condition:
-    (user.name="root" and proc.pname="osqueryd" and proc.cmdline="SchedulerRunner") or
-    (user.name="root" and proc.pname="lynis" and proc.cmdline="grep -E -v :[\!\*x]([\*\!])?: /etc/shadow")
-    (user.name="root" and proc.pname="lynis" and proc.cmdline="grep -E -v ^# /etc/pam.conf")
-    (user.name="root" and proc.pname="lynis" and proc.cmdline="grep pam_tmpdir.so /etc/pam.d/common-session")
+  condition: >
+    (user.name="root" and proc.name="SchedulerRunner" and
+     proc.cmdline="SchedulerRunner --flagfile /etc/osquery/osquery.flags --config_path /etc/osquery/osquery.conf" and
+     proc.pname="systemd"
+    ) or
+    (user.uid=0 and user.loginuid=-1 and
+     proc.pname="systemd" and proc.exepath="/usr/lib/systemd/systemd-executor" and
+     fd.name startswith "/etc/pam.d/"
+    ) or
+    (user.name="root" and proc.pname="lynis" and proc.cmdline="grep -E -v :[\\!\\*x]([\\*\\!])?: /etc/shadow") or
+    (user.name="root" and proc.pname="lynis" and proc.cmdline="grep -E -v ^# /etc/pam.conf") or
+    (user.name="root" and proc.pname="lynis" and proc.cmdline="grep pam_tmpdir.so /etc/pam.d/common-session") or
     (user.name="root" and proc.pname="lynis" and proc.cmdline="cat /etc/passwd /etc/shadow")
+
 
 - macro: user_known_write_below_root_activities
   condition: >
@@ -109,10 +117,15 @@
 - macro: proc_name_exists
   condition: (proc.name!="<NA>")
 
+- macro: known_write_wwwroot_common
+  condition: >
+    (proc.cmdline="/var/www-lufi/s" and proc.pname="/var/www-lufi/s" and fd.name="/var/www-lufi/src/lufi-provisioning.lock" and user.loginuid=-1)
+
 - macro: write_wwwroot_common
   condition: >
     wwwroot_dir and evt.dir = < and open_write
     and proc_name_exists
+    and not known_write_wwwroot_common
 
 - rule: Write below Web root
   desc: an attempt to write to any file below web root
