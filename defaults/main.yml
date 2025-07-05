@@ -61,6 +61,10 @@ falco_systemd_restriction_enable: true
 falco_service_enabled: true
 falco_grpc_unix_enabled: false
 
+# for falcoctl-artifact-follow
+falco_webproxy_env_enable: false
+falco_webproxy_env_file: /etc/environment
+
 falco_reporting: true
 falco_reporting_template: falco_report.sh
 falco_reporting_dest: /var/tmp

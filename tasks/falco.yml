@@ -55,6 +55,14 @@
     unit_name: falco
   when: falco_systemd_restriction_enable and ansible_service_mgr == 'systemd'
 
+- name: Import systemd-falcoctl-artifact-follow
+  ansible.builtin.import_tasks: systemd-falcoctl-artifact-follow.yml
+  vars:
+    unit_name: falcoctl-artifact-follow
+  when:
+    - ansible_service_mgr == 'systemd'
+    - falco_webproxy_env_enable | bool
+
 - name: Print ansible_virtualization_type when verbosity is 1
   ansible.builtin.debug:
     var: ansible_virtualization_type

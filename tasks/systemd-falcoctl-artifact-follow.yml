@@ -1,0 +1,56 @@
+---
+
+- name: Systemd
+  when: ansible_service_mgr == 'systemd'
+  block:
+    - name: Install unit - {{ unit_name }}
+      block:
+        - name: Ensure override folder exists
+          ansible.builtin.file:
+            path: "/etc/systemd/system/falcoctl-artifact-follow.service.d"
+            state: directory
+            mode: '0755'
+            owner: root
+        - name: Configure override for falcoctl-artifact-follow
+          ansible.builtin.copy:
+            content: |
+              [Service]
+              EnvironmentFile={{ falco_webproxy_env_file }}
+            dest: "/etc/systemd/system/falcoctl-artifact-follow.service.d/environment.conf"
+            mode: '0644'
+            owner: root
+      rescue:
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: /etc/systemd/system
+            state: pre
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: "/etc/systemd/system/{{ unit_name }}.service.d/environment.conf"
+            state: pre
+        - name: Ensure override folder exists (immutable)
+          ansible.builtin.file:
+            path: "/etc/systemd/system/falcoctl-artifact-follow.service.d"
+            state: directory
+            mode: '0755'
+            owner: root
+        - name: Configure override for falcoctl-artifact-follow (immutable)
+          ansible.builtin.copy:
+            content: |
+              [Service]
+              EnvironmentFile={{ falco_webproxy_env_file }}
+            dest: "/etc/systemd/system/falcoctl-artifact-follow.service.d/environment.conf"
+            mode: '0644'
+            owner: root
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: /etc/systemd/system
+            state: post
+        - name: Import immutable
+          ansible.builtin.import_tasks: immutable.yml
+          vars:
+            target_dir: "/etc/systemd/system/{{ unit_name }}.service.d/environment.conf"
+            state: post
