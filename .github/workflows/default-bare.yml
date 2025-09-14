@@ -44,6 +44,7 @@ jobs:
             falcosecurity.github.io:443
             files.pythonhosted.org:443
             galaxy.ansible.com:443
+            ghcr.io:443
             github.com:443
             hosted-compute-watchdog-prod-eus-02.githubapp.com:443
             hosted-compute-watchdog-prod-iad-02.githubapp.com:443
