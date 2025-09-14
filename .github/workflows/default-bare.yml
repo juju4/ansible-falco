@@ -37,12 +37,15 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             azure.archive.ubuntu.com:80
+            d20hasrqv82i0q.cloudfront.net:443
             download.falco.org:443
             esm.ubuntu.com:443
             falco.org:443
             files.pythonhosted.org:443
             galaxy.ansible.com:443
             github.com:443
+            hosted-compute-watchdog-prod-eus-02.githubapp.com:443
+            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
             packages.microsoft.com:443
             pypi.org:443
             www.google.com:1025
