@@ -41,6 +41,7 @@ jobs:
             download.falco.org:443
             esm.ubuntu.com:443
             falco.org:443
+            falcosecurity.github.io:443
             files.pythonhosted.org:443
             galaxy.ansible.com:443
             github.com:443
