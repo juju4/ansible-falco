@@ -37,6 +37,7 @@ jobs:
           egress-policy: block
           allowed-endpoints: >
             azure.archive.ubuntu.com:80
+            download.falco.org:443
             esm.ubuntu.com:443
             falco.org:443
             files.pythonhosted.org:443
