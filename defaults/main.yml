@@ -43,6 +43,12 @@ falco_config_template_upload: []
 # if using falcoctl, falco_rules.yaml will get overwritten
 # - { s: falco_rules_w_exceptions.yaml, d: falco_rules.yaml }
 # - { s: falco_rules.local.yaml, d: falco_rules.local.yaml }
+# When writing rules that use `override`, the rule being overridden
+# must exist.  The default validate behavior loads only the file
+# being changed.  If you're using overrides with custom rules, then
+# set the below to `true` to enable validation based on the complete
+# set of rules from `falco_rules_files`.
+falco_rules_complex_validate: false
 
 ## else some macro can be very verbose (ex: on LXD or lxd+kitchen)
 falco_dontwatch_containers: true

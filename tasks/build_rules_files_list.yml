@@ -1,0 +1,25 @@
+---
+
+- name: "Check if '{{ item }}' is a directory"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: _rules_path
+
+- name: "Find YAML files and append them if '{{ item }}' is a directory"
+  block:
+    - name: "Find .yml and .yaml files in '{{ item }}'"
+      ansible.builtin.find:
+        paths: "{{ item }}"
+        patterns:
+          - '*.yml'
+          - '*.yaml'
+      register: _rules_found
+    - name: Append found files to the list
+      ansible.builtin.set_fact:
+        falco_validate_rules_files: "{{ falco_validate_rules_files + (_rules_found.files | map(attribute='path')) }}"
+  when: _rules_path.stat.isdir is defined and _rules_path.stat.isdir
+
+- name: Append explicit files
+  ansible.builtin.set_fact:
+    falco_validate_rules_files: "{{ falco_validate_rules_files + [item] }}"
+  when: _rules_path.stat.isdir is not defined or not _rules_path.stat.isdir
