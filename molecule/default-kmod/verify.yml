@@ -18,7 +18,7 @@
       failed_when: false
     - name: Validate ps output
       ansible.builtin.assert:
-        that: ps.stdout
+        that: ps.stdout | length > 0
       when: >
         not (ansible_virtualization_type is defined and
             (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "containerd")
