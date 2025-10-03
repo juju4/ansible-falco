@@ -1,0 +1,7 @@
+- macro: sample_proc_reads_etc_shadow
+  condition: (proc.name=example_process and fd.name=/etc/shadow)
+
+- rule: Read sensitive file untrusted
+  condition: and not sample_proc_reads_etc_shadow
+  override:
+    condition: append
