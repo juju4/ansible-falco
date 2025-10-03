@@ -67,7 +67,7 @@
     - name: Build the list of rules files
       ansible.builtin.include_tasks: build_rules_files_list.yml
       loop: "{{ falco_rules_files }}"
-    - name: Validate falco rules
+    - name: Validate falco rules  # noqa: no-hander
       ansible.builtin.shell: >
         falco {{ ['-V '] | product(falco_validate_rules_files) | map('join') | list | join(' ') }}
       changed_when: false
