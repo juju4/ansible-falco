@@ -40,6 +40,12 @@ jobs:
           - molecule_distro: 'ubuntu:24.04'
             experimental: false
             suite: default-kmod
+          - molecule_distro: 'rockylinux:9'
+            experimental: false
+            suite: complex-validation
+          - molecule_distro: 'ubuntu:24.04'
+            experimental: false
+            suite: complex-validation
     env:
       ANSIBLE_CALLBACKS_ENABLED: profile_tasks
       MOLECULE_NO_LOG: "false"
