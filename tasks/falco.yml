@@ -79,6 +79,7 @@
         remote_src: true
         src: "{{ item.backup_file }}"
         dest: "{{ item.dest }}"
+        mode: preserve
       with_items: "{{ rules.results }}"
       when:
         - rules is changed
@@ -103,7 +104,7 @@
         - rules is changed
         - '"backup_file" not in item'
     - name: Make sure all handlers run
-      meta: flush_handlers
+      ansible.builtin.meta: flush_handlers
     - name: Set var to force an early failure
       ansible.builtin.set_fact:
         _complex_validate_failed: true
