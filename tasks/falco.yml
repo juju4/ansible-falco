@@ -71,8 +71,8 @@
       ansible.builtin.shell: >
         falco {{ ['-V '] | product(falco_validate_rules_files) | map('join') | list | join(' ') }}
       changed_when: false
-      when: rules is changed # noqa: no-hander
-        
+      when: rules is changed # noqa: no-handler
+
   rescue:
     - name: Restore original rules
       ansible.builtin.copy:
