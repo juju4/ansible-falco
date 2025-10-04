@@ -43,6 +43,77 @@
     - Restart falco
   register: rules
   with_items: "{{ falco_config_template_upload }}"
+  when:
+    - not falco_rules_complex_validate
+
+- name: Configure falco rules with complex check
+  when:
+    - falco_rules_complex_validate
+  block:
+    - name: Configure falco rules
+      ansible.builtin.template:
+        src: "{{ item.s }}.j2"
+        dest: "/etc/falco/{{ item.d }}"
+        mode: "0600"
+        backup: yes
+      notify:
+        - Falco global check
+        - Restart falco
+      register: rules
+      with_items: "{{ falco_config_template_upload }}"
+    - name: Initialize the list of rules files
+      ansible.builtin.set_fact:
+        falco_validate_rules_files: []
+    - name: Build the list of rules files
+      ansible.builtin.include_tasks: build_rules_files_list.yml
+      loop: "{{ falco_rules_files }}"
+    - name: Validate falco rules
+      ansible.builtin.shell: >
+        falco {{ ['-V '] | product(falco_validate_rules_files) | map('join') | list | join(' ') }}
+      changed_when: false
+      when: rules is changed # noqa: no-handler
+
+  rescue:
+    - name: Restore original rules
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ item.backup_file }}"
+        dest: "{{ item.dest }}"
+        mode: preserve
+      with_items: "{{ rules.results }}"
+      when:
+        - rules is changed
+        - '"backup_file" in item'
+      notify:
+        - Falco global check
+        - Restart falco
+    - name: Clean up backup file
+      ansible.builtin.file:
+        path: "{{ item.backup_file }}"
+        state: absent
+      with_items: "{{ rules.results }}"
+      when:
+        - rules is changed
+        - '"backup_file" in item'
+    - name: Remove new file
+      ansible.builtin.file:
+        path: "{{ item.dest }}"
+        state: absent
+      with_items: "{{ rules.results }}"
+      when:
+        - rules is changed
+        - '"backup_file" not in item'
+    - name: Make sure all handlers run
+      ansible.builtin.meta: flush_handlers
+    - name: Set var to force an early failure
+      ansible.builtin.set_fact:
+        _complex_validate_failed: true
+- name: Force failure if we rescued complex validation
+  ansible.builtin.fail:
+    msg: Failed to complete complex validation.  Review output.
+  when:
+    - _complex_validate_failed is defined
+    - _complex_validate_failed
 
 - name: Import rsyslog
   ansible.builtin.import_tasks: rsyslog.yml
