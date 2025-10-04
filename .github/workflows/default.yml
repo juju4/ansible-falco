@@ -22,6 +22,9 @@ jobs:
       max-parallel: 4
       matrix:
         include:
+          - molecule_distro: 'almalinux:10-kitten'
+            experimental: false
+            suite: default
           - molecule_distro: 'rockylinux:9'
             experimental: false
             suite: default
@@ -31,10 +34,10 @@ jobs:
           - molecule_distro: 'ubuntu:22.04'
             experimental: false
             suite: default
-          - molecule_distro: 'debian:12'
+          - molecule_distro: 'debian:13'
             experimental: false
             suite: default
-          - molecule_distro: 'debian:11'
+          - molecule_distro: 'debian:12'
             experimental: false
             suite: default
           - molecule_distro: 'ubuntu:24.04'
@@ -66,7 +69,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install molecule molecule-plugins docker ansible-lint flake8 testinfra ansible
           mkdir -p $HOME/.ansible/roles && ln -s $GITHUB_WORKSPACE/$ANSIBLE_ROLE $HOME/.ansible/roles/ || true
-          [ -f molecule/${SUITE}/requirements.yml ] && ansible-galaxy install -r molecule/${SUITE}/requirements.yml || true
+          [ -f molecule/${ANSIBLE_SUITE}/requirements.yml ] && ansible-galaxy install -r molecule/${ANSIBLE_SUITE}/requirements.yml || true
       - name: Fetch central settings repository
         run: |
           export settings_repo="https://raw.githubusercontent.com/juju4/ansible-ci-settings/main"
