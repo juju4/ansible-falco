@@ -23,6 +23,7 @@ falco_slack_output: false
 falco_slack_output_webhook: 'https://hooks.slack.com/services/XXX'
 falco_http_output_enable: false
 falco_http_output_url: "http://some.url.example.com"
+falco_webserver_enable: true
 falco_plugins:
   - name: container
     library_path: libcontainer.so
@@ -70,6 +71,7 @@ falco_grpc_unix_enabled: false
 # for falcoctl-artifact-follow
 falco_webproxy_env_enable: false
 falco_webproxy_env_file: /etc/environment
+falco_webproxy_env_content: ''
 
 falco_reporting: true
 falco_reporting_template: falco_report.sh
