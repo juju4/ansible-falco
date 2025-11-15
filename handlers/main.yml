@@ -27,5 +27,6 @@
         )
 
 - name: Falco global check
-  ansible.builtin.command: "falco -v -L"
+  ansible.builtin.command:
+    cmd: '{% if falco_libresolve_workaround | bool %}env LD_PRELOAD={{ falco_libresolve_path }} {% endif %}/usr/bin/falco -v -L'
   changed_when: false

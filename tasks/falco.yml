@@ -27,7 +27,7 @@
     dest: /etc/falco/falco.yaml
     mode: '0600'
     backup: yes
-    validate: 'falco -c %s -L'
+    validate: '{% if falco_libresolve_workaround | bool %}env LD_PRELOAD={{ falco_libresolve_path }} {% endif %}/usr/bin/falco -c %s -L'
   notify:
     - Restart falco
 
@@ -37,7 +37,7 @@
     dest: "/etc/falco/{{ item.d }}"
     mode: '0600'
     backup: yes
-    validate: 'falco -V %s'
+    validate: '{% if falco_libresolve_workaround | bool %}env LD_PRELOAD={{ falco_libresolve_path }} {% endif %}/usr/bin/falco -V %s'
   notify:
     - Falco global check
     - Restart falco

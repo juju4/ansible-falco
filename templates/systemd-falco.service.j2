@@ -25,6 +25,10 @@ TimeoutSec=30
 RestartSec=15s
 #Restart=always
 Restart=on-failure
+{% if falco_libresolve_workaround | bool %}
+# https://github.com/falcosecurity/falco/issues/3719
+Environment=LD_PRELOAD={{ falco_libresolve_path }}
+{% endif %}
 
 # PrivateNetwork= service needs access to host network
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
