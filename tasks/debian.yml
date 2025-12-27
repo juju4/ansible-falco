@@ -37,7 +37,7 @@
 
 - name: Debian | Install kernel headers
   ansible.builtin.apt:
-    name: "{% if 'pve' in ansible_kernel %}pve-headers-{{ ansible_kernel }}{% else %}linux-headers-{{ ansible_kernel }}{% endif %}"
+    name: "{% if 'pve' in ansible_facts['kernel'] %}pve-headers-{{ ansible_facts['kernel'] }}{% else %}linux-headers-{{ ansible_facts['kernel'] }}{% endif %}"
     state: present
   ignore_errors: true
   register: pkg_result

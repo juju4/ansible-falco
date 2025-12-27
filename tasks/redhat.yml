@@ -19,7 +19,7 @@
 
 - name: Redhat | Install kernel-devel
   ansible.builtin.dnf:
-    name: "kernel-devel-{{ ansible_kernel }}"
+    name: "kernel-devel-{{ ansible_facts['kernel'] }}"
     state: present
     update_cache: yes
   ignore_errors: true

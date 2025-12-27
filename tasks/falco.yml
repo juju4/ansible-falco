@@ -2,11 +2,11 @@
 
 - name: Import debian
   ansible.builtin.import_tasks: debian.yml
-  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  when: ansible_facts['distribution'] == 'Debian' or ansible_facts['distribution'] == 'Ubuntu'
 
 - name: Import redhat
   ansible.builtin.import_tasks: redhat.yml
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts['os_family'] == "RedHat"
 
 - name: Check falco config directory permissions
   ansible.builtin.file:
@@ -124,19 +124,19 @@
   ansible.builtin.import_tasks: systemd.yml
   vars:
     unit_name: falco
-  when: falco_systemd_restriction_enable and ansible_service_mgr == 'systemd'
+  when: falco_systemd_restriction_enable and ansible_facts['service_mgr'] == 'systemd'
 
 - name: Import systemd-falcoctl-artifact-follow
   ansible.builtin.import_tasks: systemd-falcoctl-artifact-follow.yml
   vars:
     unit_name: falcoctl-artifact-follow
   when:
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts['service_mgr'] == 'systemd'
     - falco_webproxy_env_enable | bool
 
-- name: Print ansible_virtualization_type when verbosity is 1
+- name: Print ansible_facts['virtualization_type'] when verbosity is 1
   ansible.builtin.debug:
-    var: ansible_virtualization_type
+    var: ansible_facts['virtualization_type']
     verbosity: 1
 
 - name: Ensure service falco enabled and started - not in containers
@@ -145,8 +145,8 @@
     enabled: yes
     state: started
   when: >
-    not (ansible_virtualization_type is defined and
-          (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker" or ansible_virtualization_type == "containerd")
+    not (ansible_facts['virtualization_type'] is defined and
+          (ansible_facts['virtualization_type'] == "lxc" or ansible_facts['virtualization_type'] == "docker" or ansible_facts['virtualization_type'] == "containerd")
         )
 ## note: for containers, it will not be possible to match kernel headers/devel
 ##    which means module compilation fails. only observed on centos7
