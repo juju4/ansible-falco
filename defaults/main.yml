@@ -1,6 +1,6 @@
 ---
 
-falco_repo_key: "{% if ansible_os_family == 'RedHat' and ansible_distribution_major_version | int <= 8 %}https://falco.org/repo/falcosecurity-3672BA8F.asc{% else %}https://falco.org/repo/falcosecurity-packages.asc{% endif %}"
+falco_repo_key: "{% if ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] | int <= 8 %}https://falco.org/repo/falcosecurity-3672BA8F.asc{% else %}https://falco.org/repo/falcosecurity-packages.asc{% endif %}"
 falco_dev: false
 falco_mode: modern-ebpf
 # falco_mode: bpf
