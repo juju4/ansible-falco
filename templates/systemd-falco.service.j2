@@ -39,8 +39,8 @@ IPAddressAllow=localhost link-local multicast 10.0.0.0/8 192.168.0.0/16
 
 ProtectHome=read-only
 ProtectSystem=full
-{% if (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 21) or
-      (ansible_distribution == 'Debian' and ansible_distribution_release == 'NA')
+{% if (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_major_version']|int >= 21) or
+      (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'NA')
 %}
 ProtectProc=ptraceable
 {% endif %}
@@ -52,9 +52,9 @@ PrivateTmp=true
 
 ProtectKernelTunables=yes
 # ProtectKernelModules=yes
-{% if (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 20) or
-      (ansible_os_family == 'RedHat' and ansible_distribution_major_version|int > 8) or
-      (ansible_distribution == 'Debian' and ansible_distribution_release == 'NA')
+{% if (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_major_version']|int >= 20) or
+      (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version']|int > 8) or
+      (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'NA')
 %}
 ProtectKernelLogs=yes
 ProtectHostname=yes
@@ -63,7 +63,7 @@ ProtectHostname=yes
 
 UMask=077
 
-{% if ansible_distribution == 'Ubuntu' and ansible_distribution_major_version|int >= 20 %}
+{% if ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_major_version']|int >= 20 %}
 # Preparation of eBPF accounting maps failed: Operation not permitted?
 # AmbientCapabilities=CAP_BPF CAP_PERFMON
 {% endif %}
@@ -101,9 +101,9 @@ LockPersonality=yes
 #   PANIC: unprotected error in call to Lua API (runtime code generation failed, restricted kernel?)
 #   ?https://www.freelists.org/post/luajit/luajit-crashes-with-grsec-kernel,1
 #MemoryDenyWriteExecute=true
-{% if (ansible_os_family == 'RedHat' and ansible_distribution_major_version|int >= 8) or
-      (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int >= 20) or
-      (ansible_distribution == 'Debian' and ansible_distribution_release == 'NA')
+{% if (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version']|int >= 8) or
+      (ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version']|int >= 20) or
+      (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_release'] == 'NA')
 %}
 PrivateMounts=true
 {% else %}

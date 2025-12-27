@@ -11,7 +11,7 @@
 {% if falco_reporting %}
     prerotate
         # test ! -x /usr/local/scripts/{{ falco_reporting_template | basename }} || sudo -u syslog /usr/local/scripts/{{ falco_reporting_template | basename }} 2>&1 >/dev/null
-        test ! -x /usr/local/scripts/{{ falco_reporting_template | basename }} || {% if ansible_distribution == 'Ubuntu' %}sudo -u {{ syslog_user }} {% endif %}/usr/local/scripts/{{ falco_reporting_template | basename }} 2>&1 >/tmp/logrotate-falco.out
+        test ! -x /usr/local/scripts/{{ falco_reporting_template | basename }} || {% if ansible_facts['distribution'] == 'Ubuntu' %}sudo -u {{ syslog_user }} {% endif %}/usr/local/scripts/{{ falco_reporting_template | basename }} 2>&1 >/tmp/logrotate-falco.out
     endscript
 {%     if syslog_postrotate_extras_cmd is defined %}
     postrotate
