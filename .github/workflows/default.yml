@@ -78,6 +78,8 @@ jobs:
           curl -o requirements.txt "$settings_repo/requirements.txt"
           curl -o .ansible-lint "$settings_repo/.ansible-lint"
           curl -o .yamllint "$settings_repo/.yamllint"
+          mkdir ~/.config/molecule
+          curl -o ~/.config/molecule/config.yml "$settings_repo/.config/molecule/config.yml"
           pip install -r requirements.txt
         continue-on-error: true
       - name: Environment
