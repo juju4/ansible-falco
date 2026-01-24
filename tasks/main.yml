@@ -12,6 +12,17 @@
       paths:
         - 'vars'
 
+- name: Set fact is_container
+  ansible.builtin.set_fact:
+    is_container: true
+  when: >
+    (ansible_facts['virtualization_type'] is defined and
+      (ansible_facts['virtualization_type'] == "docker"
+       or ansible_facts['virtualization_type'] == "container"
+       or ansible_facts['virtualization_type'] == "containerd"
+      )
+    )
+
 - name: Driver modern-ebpf | Set fact
   ansible.builtin.set_fact:
     falco_install_env:

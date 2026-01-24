@@ -83,3 +83,5 @@ falco_reporting_dest: /var/tmp
 falcoctl_artifacts_follow: []
 #  - github-rules
 #  - k8saudit-rules
+
+is_container: false

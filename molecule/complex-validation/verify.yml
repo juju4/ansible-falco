@@ -2,6 +2,19 @@
 
 - name: Verify
   hosts: molecule
+  vars:
+    is_container: false
+  pre_tasks:
+    - name: Set fact is_container
+      ansible.builtin.set_fact:
+        is_container: true
+      when: >
+        (ansible_facts['virtualization_type'] is defined and
+          (ansible_facts['virtualization_type'] == "docker"
+           or ansible_facts['virtualization_type'] == "container"
+           or ansible_facts['virtualization_type'] == "containerd"
+          )
+        )
   tasks:
     - name: Ensure /etc/falco/falco.yaml config file is present
       ansible.builtin.stat:
@@ -18,8 +31,6 @@
       failed_when: false
     - name: Validate ps output
       ansible.builtin.assert:
-        that: ps.stdout
-      when: >
-        not (ansible_facts['virtualization_type'] is defined and
-            (ansible_facts['virtualization_type'] == "lxc" or ansible_facts['virtualization_type'] == "docker" or ansible_facts['virtualization_type'] == "containerd")
-        )
+        that: ps.stdout | length > 0
+      when:
+        - not is_container | bool

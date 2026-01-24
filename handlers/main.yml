@@ -3,19 +3,15 @@
 - name: Reload systemd
   ansible.builtin.systemd:
     daemon_reload: yes
-  when: >
-    not (ansible_facts['virtualization_type'] is defined and
-          (ansible_facts['virtualization_type'] == "lxc" or ansible_facts['virtualization_type'] == "docker" or ansible_facts['virtualization_type'] == "containerd")
-        )
+  when:
+    - not is_container | bool
 
 - name: Restart falco
   ansible.builtin.service:
     name: falco
     state: restarted
-  when: >
-    not (ansible_facts['virtualization_type'] is defined and
-          (ansible_facts['virtualization_type'] == "lxc" or ansible_facts['virtualization_type'] == "docker" or ansible_facts['virtualization_type'] == "containerd")
-        )
+  when:
+    - not is_container | bool
 
 - name: Restart falcoctl-artifact-follow
   ansible.builtin.service:
@@ -26,10 +22,8 @@
   ansible.builtin.service:
     name: rsyslog
     state: restarted
-  when: >
-    not (ansible_facts['virtualization_type'] is defined and
-          (ansible_facts['virtualization_type'] == "lxc" or ansible_facts['virtualization_type'] == "docker" or ansible_facts['virtualization_type'] == "containerd")
-        )
+  when:
+    - not is_container | bool
 
 - name: Falco global check
   ansible.builtin.command:
