@@ -26,6 +26,11 @@
   register: pkg_result
   until: pkg_result is success
 
+- name: Import falcosecurity rpm key
+  ansible.builtin.rpm_key:
+    state: present
+    key: https://falco.org/repo/falcosecurity-packages.asc
+
 - name: Redhat | Install falco
   ansible.builtin.dnf:
     name: "{{ falco_pkgs }}"
