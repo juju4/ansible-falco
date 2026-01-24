@@ -12,10 +12,12 @@
     mode: '0644'
   register: dl_result
   until: dl_result is success
-  when: proxy_url is not defined or not proxy_url | string
+  when:
+    - proxy_url is not defined or proxy_url | length == 0
 
 - name: Proxy
-  when: proxy_url is defined and proxy_url | string
+  when:
+    - proxy_url is defined and proxy_url | length > 0
   block:
     # workaround for apt_key not supporting proxy (ansible#31691)
     - name: Download Falco Apt signing key  # noqa command-instead-of-module
