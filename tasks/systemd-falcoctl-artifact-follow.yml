@@ -3,6 +3,14 @@
 - name: Systemd
   when: ansible_facts['service_mgr'] == 'systemd'
   block:
+    - name: Debug
+      ansible.builtin.debug:
+        var: "{{ item }}"
+        verbosity: 1
+      loop:
+        - falco_webproxy_env_enable
+        - falco_webproxy_env_file
+        - falco_webproxy_env_content
     - name: Install unit - {{ unit_name }}
       block:
         - name: Ensure override folder exists
@@ -19,10 +27,12 @@
             dest: "/etc/systemd/system/falcoctl-artifact-follow.service.d/environment.conf"
             mode: '0644'
             owner: root
+          notify:
+            - Reload systemd
+            - Restart falcoctl-artifact-follow
           when:
             - falco_webproxy_env_enable | bool
             - falco_webproxy_env_file | length > 0
-            - falco_webproxy_env_content | length == 0
         - name: Environment file
           when:
             - falco_webproxy_env_enable | bool
@@ -36,6 +46,9 @@
                 mode: '0640'
                 owner: root
                 group: root
+              notify:
+                - Reload systemd
+                - Restart falcoctl-artifact-follow
       rescue:
         - name: Import immutable
           ansible.builtin.import_tasks: immutable.yml
@@ -61,6 +74,9 @@
             dest: "/etc/systemd/system/falcoctl-artifact-follow.service.d/environment.conf"
             mode: '0644'
             owner: root
+          notify:
+            - Reload systemd
+            - Restart falcoctl-artifact-follow
         - name: Import immutable
           ansible.builtin.import_tasks: immutable.yml
           vars:

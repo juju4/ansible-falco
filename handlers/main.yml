@@ -17,6 +17,11 @@
           (ansible_facts['virtualization_type'] == "lxc" or ansible_facts['virtualization_type'] == "docker" or ansible_facts['virtualization_type'] == "containerd")
         )
 
+- name: Restart falcoctl-artifact-follow
+  ansible.builtin.service:
+    name: falcoctl-artifact-follow
+    state: restarted
+
 - name: Restart rsyslog
   ansible.builtin.service:
     name: rsyslog
