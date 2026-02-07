@@ -23,8 +23,8 @@
     name: falcosecurity
     types: deb
     uris: " https://download.falco.org/packages/{{ pkg_name }}"
-    suites: "{{ ansible_facts['distribution_release'] }}"
-    components: stable
+    suites: stable
+    components: main
     signed_by: /usr/share/keyrings/falco-archive-keyring.gpg
 
 - name: Debian | Install kernel headers
