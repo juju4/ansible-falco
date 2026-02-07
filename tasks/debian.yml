@@ -5,37 +5,27 @@
     name: [apt-transport-https, gpg]
     state: present
 
-- name: Add falcosecurity APT key
-  ansible.builtin.get_url:
-    url: "{{ falco_repo_key }}"
-    dest: /etc/apt/trusted.gpg.d/falco.asc
-    mode: '0644'
-  register: dl_result
-  until: dl_result is success
-  when:
-    - proxy_url is not defined or proxy_url | length == 0
-
-- name: Proxy
-  when:
-    - proxy_url is defined and proxy_url | length > 0
-  block:
-    # workaround for apt_key not supporting proxy (ansible#31691)
-    - name: Download Falco Apt signing key  # noqa command-instead-of-module
-      ansible.builtin.command: curl -s -o /etc/apt/trusted.gpg.d/falco.asc "{{ falco_repo_key }}"
-      args:
-        creates: /etc/apt/trusted.gpg.d/falco.asc
-      environment:
-        http_proxy: "{{ proxy_url | default(omit) }}"
+- name: Download Falco Apt signing key  # noqa command-instead-of-module
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      curl -fsSL "{{ falco_repo_key }}" | gpg --dearmor -o /usr/share/keyrings/falco-archive-keyring.gpg
+  args:
+    executable: /bin/bash
+    creates: /usr/share/keyrings/falco-archive-keyring.gpg
+  environment:
+    http_proxy: "{{ proxy_url | default(omit) }}"
 
 - name: Install falcosecurity apt source
   vars:
     pkg_name: "{{ 'deb-dev' if (falco_dev) else 'deb' }}"
-  ansible.builtin.apt_repository:
-    # repo: "deb [signed-by={{ falco_repo_key }}] https://download.falco.org/packages/{{ pkg_name }} stable main"
-    repo: "deb https://download.falco.org/packages/{{ pkg_name }} stable main"
-    filename: falcosecurity
-    mode: '0444'
-    state: present
+  ansible.builtin.deb822_repository:
+    name: falcosecurity
+    types: deb
+    uris: " https://download.falco.org/packages/{{ pkg_name }}"
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: stable
+    signed_by: /usr/share/keyrings/falco-archive-keyring.gpg
 
 - name: Debian | Install kernel headers
   ansible.builtin.apt:
