@@ -2,7 +2,7 @@
 
 - name: Debian | Ensure apt-transport-https and gpg are present
   ansible.builtin.apt:
-    name: [apt-transport-https, gpg]
+    name: [apt-transport-https, gpg, curl]
     state: present
 
 - name: Download Falco Apt signing key  # noqa command-instead-of-module
