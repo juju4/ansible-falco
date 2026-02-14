@@ -13,4 +13,5 @@
     dest: /etc/logrotate.d/falco
     mode: '0644'
     backup: yes
-    validate: 'logrotate -dv %s'
+    # logrotate error on ownership - https://github.com/ansible/ansible/issues/53516
+    # validate: 'logrotate -dv %s'
