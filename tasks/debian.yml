@@ -16,6 +16,13 @@
   environment:
     http_proxy: "{{ proxy_url | default(omit) }}"
 
+- name: Ensure Apt signing key right permissions
+  ansible.builtin.file:
+    path: /usr/share/keyrings/falco-archive-keyring.gpg
+    mode: '0644'
+    owner: root
+    group: root
+
 - name: Install falcosecurity apt source
   vars:
     pkg_name: "{{ 'deb-dev' if (falco_dev) else 'deb' }}"
