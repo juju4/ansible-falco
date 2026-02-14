@@ -76,6 +76,8 @@ falco_webproxy_env_content: ''
 falco_libresolve_workaround: false
 falco_libresolve_path: /usr/lib/x86_64-linux-gnu/libresolv.so.2
 
+falco_rsyslog_enable: true
+
 falco_reporting: true
 falco_reporting_template: falco_report.sh
 falco_reporting_dest: /var/tmp

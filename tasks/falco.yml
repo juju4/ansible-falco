@@ -117,8 +117,12 @@
 
 - name: Import rsyslog
   ansible.builtin.import_tasks: rsyslog.yml
+  when:
+    - falco_rsyslog_enable | bool
 - name: Import logrotate
   ansible.builtin.import_tasks: logrotate.yml
+  when:
+    - falco_rsyslog_enable | bool
 
 - name: Import systemd
   ansible.builtin.import_tasks: systemd.yml
