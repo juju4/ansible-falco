@@ -1,0 +1,10 @@
+---
+
+falco_pkgs:
+    - falco
+    - jq          # Slack output depends on jq
+    - mailutils   # Mail output depends on mailutils
+    - systemd
+    - kmod
+
+syslog_user: syslog
