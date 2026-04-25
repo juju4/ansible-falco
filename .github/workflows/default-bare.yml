@@ -47,6 +47,7 @@ jobs:
           allowed-endpoints: >
             azure.archive.ubuntu.com:80
             d20hasrqv82i0q.cloudfront.net:443
+            dl.google.com:443
             download.falco.org:443
             esm.ubuntu.com:443
             falco.org:443
