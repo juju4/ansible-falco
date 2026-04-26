@@ -12,6 +12,7 @@
     src: logrotate-falco.j2
     dest: /etc/logrotate.d/falco
     mode: '0644'
+    owner: root
+    group: root
     backup: yes
-    # logrotate error on ownership - https://github.com/ansible/ansible/issues/53516
-    # validate: 'logrotate -dv %s'
+    validate: 'logrotate -dv %s'
