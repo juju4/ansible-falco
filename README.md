@@ -65,3 +65,7 @@ https://github.com/draios/sysdig/issues/152
 ## License
 
 BSD 2-clause
+
+## Resources
+
+* [OSS2Falco: Falco rules converted from popular open-source security ruleset/tools (LinPEAS, Sigma, Splunk)](https://github.com/sammonsempes/OSS2Falco)
