@@ -124,10 +124,8 @@
   when:
     - falco_rsyslog_enable | bool
 
-- name: Import systemd
-  ansible.builtin.import_tasks: systemd.yml
-  vars:
-    unit_name: falco
+- name: Import systemd-override
+  ansible.builtin.import_tasks: systemd-override.yml
   when: falco_systemd_restriction_enable and ansible_facts['service_mgr'] == 'systemd'
 
 - name: Import systemd-falcoctl-artifact-follow

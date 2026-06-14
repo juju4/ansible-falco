@@ -1,0 +1,91 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Falco: Container Native Runtime Security override
+
+[Service]
+UMask=077
+TimeoutSec=30
+RestartSec=15s
+Restart=on-failure
+
+{% if falco_libresolve_workaround | bool %}
+# https://github.com/falcosecurity/falco/issues/3719
+Environment=LD_PRELOAD={{ falco_libresolve_path }}
+{% endif %}
+
+# PrivateNetwork= service needs access to host network
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+RestrictAddressFamilies=~AF_PACKET
+IPAccounting=yes
+IPAddressAllow=localhost link-local multicast 10.0.0.0/8 192.168.0.0/16
+# IPAddressDeny= service needs access to all IPs
+
+NoNewPrivileges=yes
+ProtectHome=read-only
+ProtectSystem=full
+ProtectProc=ptraceable
+# ReadWritePaths=
+PrivateTmp=true
+
+# PrivateDevices=yes
+# DeviceAllow=/dev/falco0
+
+ProtectKernelTunables=yes
+# ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectHostname=yes
+# ProtectClock=yes
+
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+# FIXME!
+#   PANIC: unprotected error in call to Lua API (runtime code generation failed, restricted kernel?)
+#   ?https://www.freelists.org/post/luajit/luajit-crashes-with-grsec-kernel,1
+#MemoryDenyWriteExecute=true
+PrivateMounts=true
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+
+# Preparation of eBPF accounting maps failed: Operation not permitted?
+# AmbientCapabilities=CAP_BPF CAP_PERFMON
+# CapabilityBoundingSet=~CAP_SYS_ADMIN  # Required on 0.35
+CapabilityBoundingSet=~CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_DAC_READ_SEARCH
+CapabilityBoundingSet=~CAP_SYS_RAWIO
+CapabilityBoundingSet=~CAP_SYS_TIME
+# CapabilityBoundingSet=~CAP_SYS_PTRACE  # Required on 0.36 with modern-bpf
+CapabilityBoundingSet=~CAP_DAC_* CAP_FOWNER CAP_IPC_OWNER
+CapabilityBoundingSet=~CAP_NET_ADMIN
+CapabilityBoundingSet=~CAP_KILL
+CapabilityBoundingSet=~CAP_MKNOD
+CapabilityBoundingSet=~CAP_NET_BIND_SERVICE CAP_NET_BROADCAST
+CapabilityBoundingSet=~CAP_SYS_NICE
+# CapabilityBoundingSet=~CAP_SYS_RESOURCE
+CapabilityBoundingSet=~CAP_SYS_BOOT
+CapabilityBoundingSet=~CAP_LINUX_IMMUTABLE
+CapabilityBoundingSet=~CAP_SYS_CHROOT
+CapabilityBoundingSet=~CAP_BLOCK_SUSPEND
+CapabilityBoundingSet=~CAP_LEASE
+CapabilityBoundingSet=~CAP_SYS_PACCT
+CapabilityBoundingSet=~CAP_SYS_TTY_CONFIG
+CapabilityBoundingSet=~CAP_SETUID CAP_SETGID CAP_SETPCAP
+CapabilityBoundingSet=~CAP_CHOWN CAP_FSETID CAP_SETFCAP
+CapabilityBoundingSet=~CAP_NET_RAW
+CapabilityBoundingSet=~CAP_IPC_LOCK
+CapabilityBoundingSet=~CAP_WAKE_ALARM
+# CapabilityBoundingSet=~CAP_SYS_MODULE
+
+SystemCallFilter=@system-service @privileged @module @resources
+{% if falco_mode == 'modern-ebpf' %}
+SystemCallFilter=~@mount @cpu-emulation @obsolete @clock @raw-io @reboot @swap
+{% else %}
+SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @clock @raw-io @reboot @swap
+{% endif %}
+SystemCallArchitectures=native
+{% if falco_cgroups_restriction_enable|bool %}
+
+CPUWeight={{ falco_cgroups_cpushares | default('1024') }}
+CPUQuota={{ falco_cgroups_cpuquota | default('40%') }}
+MemoryMax={{ falco_cgroups_memorylimit | default('1G') }}
+{% endif %}

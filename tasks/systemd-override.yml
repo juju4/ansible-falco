@@ -1,0 +1,60 @@
+---
+
+- name: Set systemd override
+  block:
+    - name: Ensure override folder exists
+      ansible.builtin.file:
+        dest: /etc/systemd/system/falco.service.d
+        state: directory
+        mode: '0755'
+
+    - name: Review falco systemd options - override
+      ansible.builtin.template:
+        src: systemd-falco-override.service.j2
+        dest: /etc/systemd/system/falco.service.d/override.conf
+        mode: '0644'
+      notify:
+        - Reload systemd
+        - Restart falco
+
+  rescue:
+    - name: Import immutable
+      ansible.builtin.import_tasks: immutable.yml
+      vars:
+        target_dir: /etc/systemd/system/falco.service.d
+        state: pre
+    - name: Import immutable
+      ansible.builtin.import_tasks: immutable.yml
+      vars:
+        target_dir: /etc/systemd/system/falco.service.d/override.conf
+        state: pre
+
+    - name: Ensure override folder exists - immutable
+      ansible.builtin.file:
+        dest: /etc/systemd/system/falco.service.d
+        state: directory
+        mode: '0755'
+
+    # if issue, check /var/log/audit/audit.log
+    - name: Review falco systemd options - override - immutable
+      ansible.builtin.template:
+        src: systemd-falco-override.service.j2
+        dest: /etc/systemd/system/falco.service.d/override.conf
+        mode: '0644'
+      notify:
+        - Reload systemd
+        - Restart falco
+
+    - name: Import immutable
+      ansible.builtin.import_tasks: immutable.yml
+      vars:
+        target_dir: /etc/systemd/system/falco.service.d
+        state: post
+    - name: Import immutable
+      ansible.builtin.import_tasks: immutable.yml
+      vars:
+        target_dir: /etc/systemd/system/falco.service.d/override.conf
+        state: post
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
