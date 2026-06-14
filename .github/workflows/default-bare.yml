@@ -159,3 +159,8 @@ jobs:
           dpkg -l | grep libbpf
         if: ${{ always() }}
         continue-on-error: true
+      - name: After script - ausearch seccomp
+        run: |
+          ausearch -m SECCOMP -i | grep falco
+        if: ${{ always() }}
+        continue-on-error: true
