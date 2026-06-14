@@ -113,7 +113,11 @@ RestrictRealtime=yes
 RestrictSUIDSGID=yes
 
 SystemCallFilter=@system-service @privileged @module @resources
+{% if falco_mode == 'modern-ebpf' %}
+SystemCallFilter=~@mount @cpu-emulation @obsolete @clock @raw-io @reboot @swap
+{% else %}
 SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @clock @raw-io @reboot @swap
+{% endif %}
 SystemCallArchitectures=native
 {% if falco_cgroups_restriction_enable|bool %}
 
