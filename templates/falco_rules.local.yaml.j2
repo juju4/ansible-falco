@@ -11,55 +11,7 @@
 #   priority: ERROR
 #   tags: [users, container]
 
-# {"output":"00:00:00.670254745: Notice Namespace change (setns) by unexpected program (user=root user_loginuid=-1 command=snap-confine --base core18 snap.nextcloud.logrotate /usr/lib/snapd/snap-exec nextcloud.logrotate parent=snap-confine host (id=host) container_id=host image=<NA>:<NA>)","priority":"Notice","rule":"Change thread namespace","time":"2020-11-10T00:00:00.670254745Z", "output_fields": {"container.id":"host","container.image.repository":null,"container.image.tag":null,"container.name":"host","evt.time":1604966400670254745,"proc.cmdline":"snap-confine --base core18 snap.nextcloud.logrotate /usr/lib/snapd/snap-exec nextcloud.logrotate","proc.pname":"snap-confine","user.loginuid":-1,"user.name":"root"}
-- list: user_known_change_thread_namespace_binaries
-  items: ['snap-confine']
-
 # Or override/append to any rule, macro, or list from the Default Rules
-
-# user: root, arpwatch, snmp, dnsmasq
-- list: known_shell_spawn_binaries_lxdcontainers
-  items: [
-    ansible-playboo, python, pip2,
-    sshd, sudo, init, ifup, ohai, apt-get,
-# arpwatch?
-#    syslog-summary,
-# cacti?
-    perl
-    ]
-
-# Warning Shell spawned by untrusted binary (user=nagios shell=sh parent=python cmdline=sh -c sar -w 1 1)
-# Warning Shell spawned by untrusted binary (user=root shell=sh parent=python cmdline=sh -c which time) == very wide...
-- macro: monitoring_activity_legacy
-  condition: >
-    (user.name=nagios and proc.pname=python)
-
-# Shell spawned in a container other than entrypoint (user=root default-centos-6-1485875131 (id=default-centos-6-1485875131) shell=sh parent=init cmdline=sh -e -c exec /sbin/mingetty --nohangup $TTY /bin/sh)
-# Shell spawned by untrusted binary (user=jenkins shell=sh parent=java cmdline=sh -c echo $$ > '/var/lib/jenkins/workspace/_ansible-role_master-BIQGZQIFDDLMCQEUVCQNOXJVMRMUVDPFY4FQGT7O2QCXYC4PAACQ@tmp/durable-16c5cb60/pid'; jsc=durable-8c84ff2ebe8d8618f39c001e1eedb088; JENKINS_SERVER_COOKIE=$jsc '/var/lib/jenkins/workspace/_ansible-role_master-BIQGZQIFDDLMCQEUVCQNOXJVMRMUVDPFY4FQGT7O2QCXYC4PAACQ@tmp/durable-16c5cb60/script.sh' > '/var/lib/jenkins/workspace/_ansible-role_master-BIQGZQIFDDLMCQEUVCQNOXJVMRMUVDPFY4FQGT7O2QCXYC4PAACQ@tmp/durable-16c5cb60/jenkins-log.txt' 2>&1; echo $? > '/var/lib/jenkins/workspace/_ansible-role_master-BIQGZQIFDDLMCQEUVCQNOXJVMRMUVDPFY4FQGT7O2QCXYC4PAACQ@tmp/durable-16c5cb60/jenkins-result.txt')
-- macro: jenkins_activity
-  condition: >
-    (user.name=jenkins and proc.pname=java and proc.name=sh)
-
-# FIXME! not working
-- macro: user_known_non_sudo_setuid_conditions
-  condition: >
-    user.name=root or
-    (user.name=proxy and proc.pname=squid and proc.cmdline=pinger) or
-    (user.name=proxy and proc.pname=squid and proc.cmdline="squid --kid squid-1 -sYC") or
-    (user.name=proxy and proc.pname=squid and proc.cmdline="squid --kid squid-1 --foreground -sYC")
-
-- macro: user_known_change_thread_namespace_activities
-  condition: >
-    (user.name=root and proc.pname="snap-confine host (id=host)" and proc.cmdline="snap-confine snap.canonical-livepatch.canonical-livepatch /usr/lib/snapd/snap-exec canonical-livepatch status") or
-    (user.name=root and proc.pname="python3 host (id=host)" and proc.cmdline="snap-confine snap.canonical-livepatch.canonical-livepatch /usr/lib/snapd/snap-exec canonical-livepatch status --verbose") or
-    (user.name=root and proc.pname="ubuntu-advantag host (id=host)" and proc.cmdline="snap-confine snap.canonical-livepatch.canonical-livepatch /usr/lib/snapd/snap-exec canonical-livepatch status")
-
-# reproduce: $ lxc list
-- macro: user_known_write_root_conditions
-  condition: >
-    fd.name=/root/.bash_history or
-    (fd.name=/root/.config/lxc/cookies and proc.name=lxc) or
-    (fd.name=/root/.config/lxc/cookies.lock and proc.name=lxc)
 
 - macro: cmp_cp_by_passwd
   condition: proc.name in (cmp, cp) and proc.pname in (passwd, run-parts)
@@ -101,13 +53,6 @@
     (user.name="root" and proc.pname="lynis" and proc.cmdline="cat /etc/passwd /etc/shadow")
 
 
-- macro: user_known_write_below_root_activities
-  condition: >
-    user.name=_zeek and
-    (proc.cmdline startswith "bash /opt/zeek/share/zeekctl/scripts/archive-log " or
-     proc.cmdline startswith "bash /opt/zeek/share/zeekctl/scripts/postprocessors/summarize-connections conn."
-    )
-
 - macro: wwwroot_dir
   condition: fd.name startswith /var/www or fd.name startswith /usr/share/nginx/html
 
@@ -123,7 +68,7 @@
 
 - macro: write_wwwroot_common
   condition: >
-    wwwroot_dir and evt.dir = < and open_write
+    wwwroot_dir and open_write
     and proc_name_exists
     and not known_write_wwwroot_common
 
@@ -133,3 +78,17 @@
   output: "File below web root opened for writing (user=%user.name user_loginuid=%user.loginuid command=%proc.cmdline parent=%proc.pname pcmdline=%proc.pcmdline file=%fd.name program=%proc.name gparent=%proc.aname[2] ggparent=%proc.aname[3] gggparent=%proc.aname[4] container_id=%container.id image=%container.image.repository)"
   priority: ERROR
   tags: [filesystem, mitre_persistence]
+
+# proxmox/lxc
+# unsupported string escape sequence
+#      and fd.name regex "127\.0\.\.1:\d+->127\.0\.\.1:22"
+- macro: user_known_stand_streams_redirect_activities
+  condition: >
+    (
+      proc.aname[2]="init" and proc.aname[3]="lxc-start" and proc.aname[4]="systemd" and
+      fd.sip="127.0.0.1"
+      and fd.name regex "127\\.0\\.\\.1:\\d+->127\\.0\\.\\.1:22"
+      and fd.rport==22 and fd.type=="ipv4"
+      and fd.l4proto="tcp" and evt.type="dup2"
+      and proc.name="sshd" and proc.exepath="/usr/sbin/sshd" and proc.cmdline="sshd"
+    )
