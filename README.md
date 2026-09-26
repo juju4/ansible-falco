@@ -1,7 +1,7 @@
-[![Actions Status - Master](https://github.com/juju4/ansible-falco/workflows/AnsibleCI/badge.svg)](https://github.com/juju4/ansible-falco/actions?query=branch%3Amain)
-[![Actions Status - Devel](https://github.com/juju4/ansible-falco/workflows/AnsibleCI/badge.svg?branch=devel)](https://github.com/juju4/ansible-falco/actions?query=branch%3Adevel)
-
 # Falco Behavioral activity monitor ansible role
+
+[![Actions Status - Main](https://github.com/juju4/ansible-falco/workflows/AnsibleCI/badge.svg)](https://github.com/juju4/ansible-falco/actions?query=branch%3Amain)
+[![Actions Status - Devel](https://github.com/juju4/ansible-falco/workflows/AnsibleCI/badge.svg?branch=devel)](https://github.com/juju4/ansible-falco/actions?query=branch%3Adevel)
 
 Ansible role to setup Falco
 * https://falco.org/
