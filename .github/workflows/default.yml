@@ -41,7 +41,7 @@ jobs:
             experimental: false
             suite: default
           - molecule_distro: 'ubuntu:24.04'
-            experimental: false
+            experimental: true
             suite: default-kmod
           - molecule_distro: 'rockylinux:9'
             experimental: false
